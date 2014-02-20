@@ -1,14 +1,4 @@
 
-// Get Random Poem from Wikisource
-$(document).ready(function() {
-    $.post("./getRandomPoem.php", function(data) {
-        data = JSON.parse(data);
-        console.log(data); // Json du poeme avec : poeme, auteur, titre et url
-        var poeme = data.poeme.replace(/\r\n|\r|\n/g, "<br>"); // replace les sauts de ligne
-        document.getElementById("poem").innerHTML = poeme;
-    });
-});
-
 // Comptage et découpage d'un mot en syllabes avec les possibilités de diérèses gérées par la variable max
 function syllabify(s) {
     if (s.toLowerCase() == "pays") { // Exception pour ce mot ingérable autrement
@@ -18,7 +8,7 @@ function syllabify(s) {
     var voyellesFortes = ['a', 'A', 'á', 'Á', 'à', 'À', 'â', 'Â', 'e', 'E', 'é', 'É', 'è', 'È', 'ê', 'Ê', 'í', 'Í', 'o', 'ó', 'O', 'Ó', 'ô', 'Ô', 'ú', 'Ú'];
     var voyellesFaibles = ['i', 'I', 'u', 'U', 'ü', 'Ü', 'ï', 'Ï', 'î', 'Î', 'û', 'Û'];
     var voyelles = voyellesFortes.concat(voyellesFaibles, ['y', 'Y']);
-    var m, coupure;
+    var nb, coupure;
     var j = 0, max = 0;
     var n = s.length - 1;
     var i = 0;
@@ -96,18 +86,18 @@ function syllabify(s) {
         }
         i++;
     }
-    m = syllabes.length;
-    if ((j == n) && (m > 0) && (consonnes.indexOf(s.charAt(n)) > -1)) { //Dernière lettre
-        syllabes[m - 1] = syllabes[m - 1] + s.charAt(n);
+    nb = syllabes.length;
+    if ((j == n) && (nb > 0) && (consonnes.indexOf(s.charAt(n)) > -1)) { //Dernière lettre
+        syllabes[nb - 1] = syllabes[nb - 1] + s.charAt(n);
     } else {
         var voy = s.substring(j, n + 1);
         syllabes.push(voy); // Dernière syllabe
-        m++;
+        nb++;
     }
-    return ({syllabes: syllabes, nb: m, max: m + max});
+    return {syllabes: syllabes, nb: nb, max: nb + max};
 }
 
-// Pour chaque mot dans le vers, applique syllabify avec les règles d'élision du e
+// Prend un tableau de mots en entrée. Pour chaque mot dans le tableau (vers), applique syllabify avec les règles d'élision du e
 function elisioner(mots) {
     var voyelles = ['a', 'A', 'á', 'Á', 'à', 'À', 'â', 'Â', 'e', 'E', 'é', 'É', 'è', 'È', 'ê', 'Ê', 'í', 'Í', 'o', 'ó', 'O', 'Ó', 'ô', 'Ô', 'ú', 'Ú', 'i', 'I', 'u', 'U', 'ü', 'Ü', 'û', 'Û', 'ï', 'Ï', 'î', 'Î'];
     var elision = voyelles.concat(['h', 'H']);
@@ -151,17 +141,15 @@ function elisioner(mots) {
     return {nb: nb, max: max};
 }
 
-// Compte le nombre de syllabes d'un vers en suivant les règles classiques d'élision
+// Compte le nombre de syllabes des vers d'un poème en suivant les règles classiques d'élision
 function metrify(s) {
-    if (s == null) {
-        s = document.getElementsByTagName('textarea')[0].value;
-    }
     s = s.replace(/[\.,\/#!$%\^&\*;\?:{}=\_`~()]/g, ""); // retire la ponctuation
     s = s.replace(/[0-9]/g, ''); // retire les nombres
     s = s.replace(/\s{2,}/g, " "); // retire les doubles espaces
     s = s.replace(/œ/g, "oe");
     s = s.replace(/æ/g, "ae");
-    var vers = s.split(/\r\n|\r|\n/g); // range chaque vers dans un tableau
+    s = s.replace(/\r\n|\r|\n/g, "<br>");
+    var vers = s.split("<br>"); // range chaque vers dans un tableau
     vers = vers.filter(function(v) { // retire les strings vides
         return v !== ''
     });
@@ -176,23 +164,12 @@ function metrify(s) {
         mots[i] = lesmots; // range les mots dans un tableau différent pour chaque vers
     }
 
-    // Appliquer elisioner aux mots de chaque vers
+    // Appliquer elisioner au tableau de mots de chaque vers
     for (var k = 0; k < mots.length; k++) {
         nbsyllabes[k] = elisioner(mots[k]);
     }
 
-    // Teste pour chaque vers si le nb syllabes correspond à un alexandrin, sinon affiche le vers correspondant
-    /* TODO
-     * Moyenne des résultats obtenus pour tous les vers afin de pouvoir afficher : alexandrin / décasyllabe / octosyllabe ...
-     * 
-     */
-    for (var k = 0; k < nbsyllabes.length; k++) {
-        if (nbsyllabes[k].nb % 12 != 0 && nbsyllabes[k].max % 12 != 0) {
-            console.log(nbsyllabes[k]);
-            console.log(vers[k]);
-            console.log(mots[k]);
-        }
-    }
+    return {vers: vers, mots: mots, nbsyllabes: nbsyllabes};
 }
 
 // Récupère les rimes d'un mot ayant le même nombre de syllabes et la même nature (Verbe, nom, adjectif...)
@@ -220,16 +197,29 @@ function rimify(s) {
         },
         success: function(response) {
             var data = response.query.results.json;
+            var rimesArray = [];
             var rime, syllabesRime;
             for (var k = 0; k < data.result.length; k++) {
                 rime = data.result[k].word;
                 syllabesRime = syllabify(rime); // Compte le nombre de syllabes de la rime trouvée
                 if (syllabesRime.nb == syllabes.nb && syllabesRime.max == syllabes.max && natureEquals(data.result[k], data.keys.json[2])) { // Teste nbsyllabes, nbmax et la nature
-                    console.log(rime);
+                    rimesArray.push(rime);
                 }
             }
-            console.log("--FIN--");
+            return rimesArray;
         }
     });
 }
 
+// Get Random Poem from Wikisource
+function getRandomPoem() {
+    var poemDIV = document.getElementById("poem");
+    poemDIV.innerHTML = "Wait for it...";
+    $.post("./getRandomPoem.php", function(data) {
+        data = JSON.parse(data);
+        console.log(data); // Json du poeme avec : poeme, auteur, titre et url
+        var poeme = data.poeme.replace(/\r\n|\r|\n/g, "<br>"); // replace les sauts de ligne
+        document.getElementById("meta").innerHTML = '<h1><a href="' + data.url + '">' + data.titre + '</a></h1><br> de ' + data.auteur + '<br><br>';
+        poemDIV.innerHTML = poeme;
+    });
+}
