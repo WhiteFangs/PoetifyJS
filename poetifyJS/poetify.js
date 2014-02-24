@@ -174,7 +174,8 @@ function metrify(s) {
 
 // Récupère les rimes d'un mot ayant le même nombre de syllabes et la même nature (Verbe, nom, adjectif...)
 function rimify(s) {
-    var syllabes = syllabify(s);
+    var syllabes = syllabify(s), request;
+
     // Parse la nature de la rime et compare à celle du mot
     function natureEquals(rime, nature) {
         var natureRime = rime.orig.replace(/ *\([^)]*\) */g, "").split(", ");
@@ -187,39 +188,73 @@ function rimify(s) {
         return false;
     }
 
-    $.ajax({
-        url: "http://query.yahooapis.com/v1/public/yql",
-        jsonp: "callback",
-        dataType: "jsonp",
-        data: {
-            q: "select * from json where url =\"http://drime.a3nm.net/query?query=" + s + "&nsyl=&json=on\" ",
-            format: "json"
-        },
-        success: function(response) {
-            var data = response.query.results.json;
-            var rimesArray = [];
-            var rime, syllabesRime;
-            for (var k = 0; k < data.result.length; k++) {
-                rime = data.result[k].word;
-                syllabesRime = syllabify(rime); // Compte le nombre de syllabes de la rime trouvée
-                if (syllabesRime.nb == syllabes.nb && syllabesRime.max == syllabes.max && natureEquals(data.result[k], data.keys.json[2])) { // Teste nbsyllabes, nbmax et la nature
-                    rimesArray.push(rime);
-                }
+    // Callback de la requête JSONP
+    var callback = function(response) {
+        var data = response.query.results.json;
+        var rimesArray = [];
+        var rime, syllabesRime;
+        for (var k = 0; k < data.result.length; k++) {
+            rime = data.result[k].word;
+            syllabesRime = syllabify(rime); // Compte le nombre de syllabes de la rime trouvée
+            if (syllabesRime.nb == syllabes.nb && syllabesRime.max == syllabes.max && natureEquals(data.result[k], data.keys.json[2])) { // Teste nbsyllabes, nbmax et la nature
+                rimesArray.push(rime);
             }
-            return rimesArray;
         }
-    });
+        console.log(rimesArray);
+        return rimesArray;
+    };
+
+    // Instantiation de la requête JSONP
+    var query = "select * from json where url =\"http://drime.a3nm.net/query?query=" + s + "&nsyl=&json=on\" ";
+    var getRimes = new YQLQuery(query, callback);
+    getRimes.fetch();
 }
 
 // Get Random Poem from Wikisource
 function getRandomPoem() {
-    var poemDIV = document.getElementById("poem");
+    var poemDIV = document.getElementById("poem"), request;
     poemDIV.innerHTML = "Wait for it...";
-    $.post("./getRandomPoem.php", function(data) {
-        data = JSON.parse(data);
-        console.log(data); // Json du poeme avec : poeme, auteur, titre et url
-        var poeme = data.poeme.replace(/\r\n|\r|\n/g, "<br>"); // replace les sauts de ligne
-        document.getElementById("meta").innerHTML = '<h1><a href="' + data.url + '">' + data.titre + '</a></h1><br> de ' + data.auteur + '<br><br>';
-        poemDIV.innerHTML = poeme;
-    });
+    request = new XMLHttpRequest;
+    request.open('GET', './getRandomPoem.php', true);
+    request.onreadystatechange = function() {
+        if (this.readyState === 4) {
+            if (this.status >= 200 && this.status < 400) {
+                var data = this.responseText;
+                data = JSON.parse(data);
+                console.log(data); // Json du poeme avec : poeme, auteur, titre et url
+                var poeme = data.poeme.replace(/\r\n|\r|\n/g, "<br>"); // replace les sauts de ligne
+                document.getElementById("meta").innerHTML = '<h1><a href="' + data.url + '">' + data.titre + '</a></h1><br> de ' + data.auteur + '<br><br>';
+                poemDIV.innerHTML = poeme;
+            } else {
+                document.getElementById("meta").innerHTML = "Erreur lors de la récupération du poème. Réessayer.";
+                poemDIV.innerHTML = '<div id="poem"><button id="getRandomPoem" onclick="getRandomPoem();">Poème au hasard</button></div>';
+            }
+        }
+    }
+    request.send();
+    request = null;
+}
+
+// Requête JSONP via l'API Yahoo
+function YQLQuery(query, callback) {
+    this.query = query;
+    this.callback = callback || function() {
+    };
+    this.fetch = function() {
+
+        var scriptEl = document.createElement('script'),
+                uid = 'yql' + +new Date(),
+                encodedQuery = encodeURIComponent(this.query.toLowerCase()),
+                instance = this;
+
+        YQLQuery[uid] = function(json) {
+            instance.callback(json);
+            delete YQLQuery[uid];
+            document.body.removeChild(scriptEl);
+        };
+
+        scriptEl.src = 'http://query.yahooapis.com/v1/public/yql?q='
+                + encodedQuery + '&format=json&callback=YQLQuery.' + uid;
+        document.body.appendChild(scriptEl);
+    };
 }
