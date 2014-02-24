@@ -14,7 +14,7 @@ function getRandomPoem($i) {
     $classAuthor = 'headertemplate-author';
     $dom = new DOMDocument;
     $poemHTML = mb_convert_encoding($poemHTML, 'HTML-ENTITIES', "UTF-8");
-    $dom->loadHTML($poemHTML);
+    @$dom->loadHTML($poemHTML);
     $xpath = new DOMXPath($dom);
     $poem = $xpath->query("//*[@class='" . $classPoem . "']");
     $title = $xpath->query("//*[@class='" . $classTitle . "']");
