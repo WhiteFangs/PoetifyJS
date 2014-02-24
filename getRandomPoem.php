@@ -1,6 +1,6 @@
 <?php
 
-function getRandomPoem() {
+function getRandomPoem($i) {
     // Take random article from Wikipedia in the Category : Poèmes
     $getRandom = 'http://toolserver.org/~erwin85/randomarticle.php?lang=fr&family=wikisource&categories=Poèmes&namespaces=0';
     // Take url from redirection
@@ -21,13 +21,14 @@ function getRandomPoem() {
     $author = $xpath->query("//*[@class='" . $classAuthor . "']");
     // if everything is there, return the array of elements
     if ($poem->length > 0 && $title->length > 0 && $author->length > 0) {
-        $arr = array('url' => $poemUrl, 'titre' => $title->item(0)->nodeValue, 'auteur' => $author->item(0)->nodeValue, 'poeme' => $poem->item(0)->nodeValue);
+        $arr = array('url' => $poemUrl, 'titre' => $title->item(0)->nodeValue, 'auteur' => $author->item(0)->nodeValue, 'poeme' => $poem->item(0)->nodeValue, 'iterations' => $i);
         return $arr;
     } else { // else search another poem
-        return getPoem();
+        $i++;
+        return getRandomPoem($i);
     }
 }
 
-$poem = getRandomPoem();
+$poem = getRandomPoem(1);
 echo json_encode($poem);
 ?>
