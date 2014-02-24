@@ -49,8 +49,6 @@ Fonctions
 Utilisation
 ----
 
-PoetifyJS utilise jQuery par commodité pour les requêtes AJAX. (Ce n'est cependant pas une nécessité)
-
 **L'ensemble des fonctions Metrify + Elisioner + Syllabify a notamment été testé et validé sur les alexandrins de l'acte I du Phèdre de Racine**
 *(en omettant cependant les différences de règles sur les diérèses à l'époque, voir [cette page] pour plus de détails.)*
 
