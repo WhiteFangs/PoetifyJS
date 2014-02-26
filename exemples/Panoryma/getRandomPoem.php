@@ -16,12 +16,16 @@ function getRandomPoem($i) {
     $poemHTML = mb_convert_encoding($poemHTML, 'HTML-ENTITIES', "UTF-8");
     @$dom->loadHTML($poemHTML);
     $xpath = new DOMXPath($dom);
-    $poem = $xpath->query("//*[@class='" . $classPoem . "']");
+    $poem = '';
+    $poemdivs = $xpath->query("//*[@class='" . $classPoem . "']");
     $title = $xpath->query("//*[@class='" . $classTitle . "']");
     $author = $xpath->query("//*[@class='" . $classAuthor . "']");
     // if everything is there, return the array of elements
-    if ($poem->length > 0 && $title->length > 0 && $author->length > 0) {
-        $arr = array('url' => $poemUrl, 'titre' => $title->item(0)->nodeValue, 'auteur' => $author->item(0)->nodeValue, 'poeme' => $poem->item(0)->nodeValue, 'iterations' => $i);
+    if ($poemdivs->length > 0 && $title->length > 0 && $author->length > 0) {
+        for ($i = 0; $i < $poemdivs->length; $i++){
+            $poem = $poem . $poemdivs->item($i)->nodeValue;
+        }
+        $arr = array('url' => $poemUrl, 'titre' => $title->item(0)->nodeValue, 'auteur' => $author->item(0)->nodeValue, 'poeme' => $poem, 'iterations' => $i);
         return $arr;
     } else { // else search another poem
         $i++;
