@@ -58,6 +58,13 @@ PoetifyJS est sous **licence MIT** (cf le fichier LICENCE)
 
 N'hésitez pas à faire des remarques ou contribuer !
 
+Exemples
+-----
+
+### Panoryma
+
+** En cours de développement**
+
 [drime.a3nm.net]:http://drime.a3nm.net/
 [Lexique]:http://www.lexique.org/
 [Wikisource]:http://fr.wikisource.org/
