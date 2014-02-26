@@ -193,11 +193,13 @@ function rimify(s) {
         var data = response.query.results.json;
         var rimesArray = [];
         var rime, syllabesRime;
-        for (var k = 0; k < data.result.length; k++) {
-            rime = data.result[k].word;
-            syllabesRime = syllabify(rime); // Compte le nombre de syllabes de la rime trouvée
-            if (syllabesRime.nb == syllabes.nb && syllabesRime.max == syllabes.max && natureEquals(data.result[k], data.keys.json[2])) { // Teste nbsyllabes, nbmax et la nature
-                rimesArray.push(rime);
+        if (data.result != null) {
+            for (var k = 0; k < data.result.length; k++) {
+                rime = data.result[k].word;
+                syllabesRime = syllabify(rime); // Compte le nombre de syllabes de la rime trouvée
+                if (syllabesRime.nb == syllabes.nb && syllabesRime.max == syllabes.max && natureEquals(data.result[k], data.keys.json[2])) { // Teste nbsyllabes, nbmax et la nature
+                    rimesArray.push(rime);
+                }
             }
         }
         console.log(rimesArray);
