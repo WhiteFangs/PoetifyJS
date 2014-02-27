@@ -193,11 +193,13 @@ function rimify(s) {
         var data = response.query.results.json;
         var rimesArray = [];
         var rime, syllabesRime;
-        for (var k = 0; k < data.result.length; k++) {
-            rime = data.result[k].word;
-            syllabesRime = syllabify(rime); // Compte le nombre de syllabes de la rime trouvée
-            if (syllabesRime.nb == syllabes.nb && syllabesRime.max == syllabes.max && natureEquals(data.result[k], data.keys.json[2])) { // Teste nbsyllabes, nbmax et la nature
-                rimesArray.push(rime);
+        if (data.result != null) {
+            for (var k = 0; k < data.result.length; k++) {
+                rime = data.result[k].word;
+                syllabesRime = syllabify(rime); // Compte le nombre de syllabes de la rime trouvée
+                if (syllabesRime.nb == syllabes.nb && syllabesRime.max == syllabes.max && natureEquals(data.result[k], data.keys.json[2])) { // Teste nbsyllabes, nbmax et la nature
+                    rimesArray.push(rime);
+                }
             }
         }
         console.log(rimesArray);
@@ -222,9 +224,20 @@ function getRandomPoem() {
                 var data = this.responseText;
                 data = JSON.parse(data);
                 console.log(data); // Json du poeme avec : poeme, auteur, titre et url
-                var poeme = data.poeme.replace(/\r\n|\r|\n/g, "<br>"); // replace les sauts de ligne
+                var poeme = data.poeme.replace(/[^\S\n]/g, '</span> <span class="mot1">');
+                poeme = poeme.replace(/\r\n|\r|\n/g, '</span></span><br><span class="vers"><span class="mot1">'); // replace les sauts de ligne
+                poeme = '<span class="vers"><span class="mot1">' + poeme + '</span></span>';
                 document.getElementById("meta").innerHTML = '<h1><a href="' + data.url + '">' + data.titre + '</a></h1><br> de ' + data.auteur + '<br><br>';
                 poemDIV.innerHTML = poeme;
+                poemDIV.innerHTML = poemDIV.innerHTML.replace(new RegExp(escapeRegExp('<span class="vers"><span class="mot1"></span></span>'), 'g'), "");
+                if (document.body.addEventListener)
+                {
+                    document.body.addEventListener('click', rimifyBinder, false);
+                }
+                else
+                {
+                    document.body.attachEvent('onclick', rimifyBinder); //pour IE
+                }
             } else {
                 document.getElementById("meta").innerHTML = "Erreur lors de la récupération du poème. Réessayer.<br>";
                 poemDIV.innerHTML = '<div id="poem"><button id="getRandomPoem" onclick="getRandomPoem();">Poème au hasard</button></div>';
@@ -233,6 +246,60 @@ function getRandomPoem() {
     }
     request.send();
     request = null;
+}
+
+window.motsArray = [];
+
+function rimifyBinder(e)
+{
+    e = e || window.event;
+    var target = e.target || e.srcElement;
+    if (target.className == "mot")
+    {
+        var mot = e.target.innerHTML.replace('<span class="mot1">', '').replace('</span>', '');
+        var vers = e.target.parentNode.innerHTML;
+        vers = replaceAll('<span class="mot1">', '', vers);
+        vers = replaceAll('</span>', '', vers);
+        vers = replaceAll('<span class="vers">', '', vers);
+        var position = vers.indexOf(mot); // Besoin de l'index du début du mot cliqué dans le cas de répétitions dans un même vers
+        mot = mot.split(/[\.,\/#!$%\^&\*;\?:{}=\_`~()]/g)[0];// Si il y a de la ponctuation on la coupe du mot
+        var rimes, k = 0;
+        for (var i = 0; i < window.motsArray.length; i++) { // Vérifier si les rimes du mot ne sont pas déjà chargées
+            if (window.motsArray[i].mot == mot) { // Si le mot est chargé mais pas rimé
+                rimes = window.motsArray[i].rimes; // On charge les rimes
+                k = 0; // On part de la première pour vérifier la métrique
+                i = window.motsArray.length; // On sort de la boucle for et on passe à la suite
+            } else if (window.motsArray[i].rimes.indexOf(mot) > -1) { // Si le mot correspond à une rime déjà chargée
+                rimes = window.motsArray[i].rimes; // On charge les rimes
+                k = window.motsArray[i].index;
+                k++; // On part de la rime suivante
+                if (k = rimes.length) { // Si c'était la dernière rime
+                    if (mot != null) { // Si c'est la première fois qu'on atteint la fin des rimes du mot initial
+                        window.motsArray[i].rimes = window.motsArray[i].rimes.unshift(mot); // On ajoute le mot initial aux rimes
+                        window.motsArray[i].mot = null; // On indique que le mot initial est dans le tableau de rimes
+                    }
+                    k = 0; // On revient à la première
+                }
+                i = window.motsArray.length; // On sort de la boucle for et on passe à la suite
+            }
+        }
+        if (rimes == null) { // Si les rimes n'ont pas été chargées, on les charge
+            rimes = rimify(mot);
+        }
+        var index = k;
+        var metrique = metrify(vers), metriqueRime, versRime;
+        do {
+            versRime = vers.replaceBetween(position, position + mot.length, rimes[k % rimes.length]);
+            metriqueRime = metrify(versRime);
+            if (metriqueRime.nbsyllabes[0] == metrique.nbsyllabes[0]) { // Stricte égalité, pas de prise en compte des autres cas possibles par sûreté
+                e.target.innerHTML.replace(mot, rimes[k % rimes.length]);
+                window.motsArray = window.motsArray.concat({mot: mot, rime: rimes[k], rimes: rimes, index: k % rimes.length});
+                k = index + rimes.length;
+            }
+            k++;
+        }
+        while (k % rimes.length != index) // Tant qu'on revient pas sur la rime initiale du tableau, on continue à le parcourir
+    }
 }
 
 // Requête JSONP via l'API Yahoo
@@ -258,3 +325,17 @@ function YQLQuery(query, callback) {
         document.body.appendChild(scriptEl);
     };
 }
+
+// Parse correctement un string en RegExp
+function escapeRegExp(str) {
+    return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+}
+// Replace toutes les occurrences dans un string
+function replaceAll(find, replace, str) {
+    return str.replace(new RegExp(escapeRegExp(find), 'g'), replace);
+}
+
+// Remplace une partie d'un string dont la position est définie par les indices
+String.prototype.replaceBetween = function(start, end, replace) {
+    return this.substring(0, start) + replace + this.substring(end);
+};
