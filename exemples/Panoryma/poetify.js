@@ -4,7 +4,7 @@ function syllabify(s) {
     if (s.toLowerCase() == "pays") { // Exception pour ce mot ingérable autrement
         return ({syllabes: ["pa", "ys"], nb: 2, max: 2});
     }
-    if (!s.trim().match(/[a-zA-Z]/g)) {
+    if (!s.trim().match(/[a-zA-Z]/g)){
         return {syllabes: [], nb: 0, max: 0};
     }
     var consonnes = ['b', 'B', 'c', 'C', 'ç', 'Ç', 'd', 'D', 'f', 'F', 'g', 'G', 'h', 'H', 'j', 'J', 'k', 'K', 'l', 'L', 'm', 'M', 'n', 'N', 'ñ', 'Ñ', 'p', 'P', 'q', 'Q', 'r', 'R', 's', 'S', 't', 'T', 'v', 'V', 'w', 'W', 'x', 'X', 'y', 'Y', 'z', 'Z', '-'];
@@ -182,10 +182,11 @@ function rimify(s, traitement) {
     // Parse la nature de la rime et compare à celle du mot
     function natureEquals(rime, nature) {
         var natureRime = rime.orig.replace(/ *\([^)]*\) */g, "").split(", ");
-        nature = nature.replace(/ *\([^)]*\) */g, "").split(", ");
-        if (natureRime.trim() == "") {
+        nature = nature.replace(/ *\([^)]*\) */g, "");
+        if (nature.trim() == "") {
             return true;
         }
+        nature = nature.split(", ");
         for (var i = 0; i < natureRime.length; i++) {
             if (nature.indexOf(natureRime[i]) > -1) {
                 return true;
@@ -208,15 +209,11 @@ function rimify(s, traitement) {
                 }
             }
         }
-        if (rimesArray.length != 0) {
-            return traitement(rimesArray);
-        } else {
-            return false;
-        }
+        return traitement(rimesArray);
     };
 
     // Instantiation de la requête JSONP
-    var query = "select * from json where url =\"http://drime.a3nm.net/query?query=" + s + "&gender=on&nsyl=&json=on\" ";
+    var query = "select * from json where url =\"http://drime.a3nm.net/query?query=" + s + "&nsyl=&json=on\" ";
     var getRimes = new YQLQuery(query, callback);
     getRimes.fetch();
 }
@@ -307,7 +304,7 @@ function rimifyBinder(e)
                 i = window.motsArray.length;
             } else if (window.motsArray[i].rimes.indexOf(mot) > -1) {
                 rimes = window.motsArray[i].rimes;
-                k = window.motsArray[i].indexOf(mot);
+                k = window.motsArray[i].rimes.indexOf(mot);
                 k++;
                 if (k == rimes.length) {
                     if (mot != null && window.motsArray[i].rimes.indexOf(mot) < 0) {

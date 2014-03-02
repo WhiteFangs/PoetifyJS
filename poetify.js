@@ -182,10 +182,11 @@ function rimify(s) {
     // Parse la nature de la rime et compare à celle du mot
     function natureEquals(rime, nature) {
         var natureRime = rime.orig.replace(/ *\([^)]*\) */g, "").split(", ");
-        nature = nature.replace(/ *\([^)]*\) */g, "").split(", ");
-        if(natureRime.trim() == ""){
+        nature = nature.replace(/ *\([^)]*\) */g, "");
+        if (nature.trim() == "") {
             return true;
         }
+        nature = nature.split(", ");
         for (var i = 0; i < natureRime.length; i++) {
             if (nature.indexOf(natureRime[i]) > -1) {
                 return true;
