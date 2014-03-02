@@ -4,7 +4,7 @@ function syllabify(s) {
     if (s.toLowerCase() == "pays") { // Exception pour ce mot ingérable autrement
         return ({syllabes: ["pa", "ys"], nb: 2, max: 2});
     }
-    if (!s.trim().match(/[a-zA-Z]/g)){
+    if (!s.trim().match(/[a-zA-Z]/g)) {
         return {syllabes: [], nb: 0, max: 0};
     }
     var consonnes = ['b', 'B', 'c', 'C', 'ç', 'Ç', 'd', 'D', 'f', 'F', 'g', 'G', 'h', 'H', 'j', 'J', 'k', 'K', 'l', 'L', 'm', 'M', 'n', 'N', 'ñ', 'Ñ', 'p', 'P', 'q', 'Q', 'r', 'R', 's', 'S', 't', 'T', 'v', 'V', 'w', 'W', 'x', 'X', 'y', 'Y', 'z', 'Z', '-'];
@@ -183,6 +183,9 @@ function rimify(s, traitement) {
     function natureEquals(rime, nature) {
         var natureRime = rime.orig.replace(/ *\([^)]*\) */g, "").split(", ");
         nature = nature.replace(/ *\([^)]*\) */g, "").split(", ");
+        if (natureRime.trim() == "") {
+            return true;
+        }
         for (var i = 0; i < natureRime.length; i++) {
             if (nature.indexOf(natureRime[i]) > -1) {
                 return true;
@@ -205,11 +208,15 @@ function rimify(s, traitement) {
                 }
             }
         }
-        return traitement(rimesArray);
+        if (rimesArray.length != 0) {
+            return traitement(rimesArray);
+        } else {
+            return false;
+        }
     };
 
     // Instantiation de la requête JSONP
-    var query = "select * from json where url =\"http://drime.a3nm.net/query?query=" + s + "&nsyl=&json=on\" ";
+    var query = "select * from json where url =\"http://drime.a3nm.net/query?query=" + s + "&gender=on&nsyl=&json=on\" ";
     var getRimes = new YQLQuery(query, callback);
     getRimes.fetch();
 }

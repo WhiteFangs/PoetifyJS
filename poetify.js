@@ -183,6 +183,9 @@ function rimify(s) {
     function natureEquals(rime, nature) {
         var natureRime = rime.orig.replace(/ *\([^)]*\) */g, "").split(", ");
         nature = nature.replace(/ *\([^)]*\) */g, "").split(", ");
+        if(natureRime.trim() == ""){
+            return true;
+        }
         for (var i = 0; i < natureRime.length; i++) {
             if (nature.indexOf(natureRime[i]) > -1) {
                 return true;
