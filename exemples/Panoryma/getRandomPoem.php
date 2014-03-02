@@ -1,5 +1,7 @@
 <?php
 
+// TODO : if Warnings -> retry
+
 function getRandomPoem($i) {
     // Take random article from Wikipedia in the Category : Poèmes
     $getRandom = 'http://toolserver.org/~erwin85/randomarticle.php?lang=fr&family=wikisource&categories=Poèmes&namespaces=0';

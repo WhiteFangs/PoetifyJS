@@ -146,22 +146,22 @@ function elisioner(mots) {
 
 // Compte le nombre de syllabes des vers d'un poème en suivant les règles classiques d'élision
 function metrify(s) {
-    s = s.replace(/[\.,\/#!$%\^&\*;\?:{}=\_`~()]/g, ""); // retire la ponctuation
-    s = s.replace(/[0-9]/g, ''); // retire les nombres
-    s = s.replace(/\s{2,}/g, " "); // retire les doubles espaces
+    s = s.replace(/[\.,\/#!$%\^&\*;\?:{}=\_`~()]/g, "");
+    s = s.replace(/[0-9]/g, '');
+    s = s.replace(/\s{2,}/g, " ");
     s = s.replace(/œ/g, "oe");
     s = s.replace(/æ/g, "ae");
     s = s.replace(/\r\n|\r|\n/g, "<br>");
-    var vers = s.split("<br>"); // range chaque vers dans un tableau
-    vers = vers.filter(function(v) { // retire les strings vides
+    var vers = s.split("<br>");
+    vers = vers.filter(function(v) {
         return v !== ''
     });
     var mots = [];
     var nbsyllabes = [];
 
     for (var i = 0; i < vers.length; i++) {
-        var lesmots = vers[i].split(" "); // Sépare les mots de chaque vers
-        lesmots = lesmots.filter(function(v) { // retire les strings vides
+        var lesmots = vers[i].split(" ");
+        lesmots = lesmots.filter(function(v) {
             return v !== ''
         });
         mots[i] = lesmots; // range les mots dans un tableau différent pour chaque vers
@@ -199,8 +199,8 @@ function rimify(s, traitement) {
         if (data.result != null) {
             for (var k = 0; k < data.result.length; k++) {
                 rime = data.result[k].word;
-                syllabesRime = syllabify(rime); // Compte le nombre de syllabes de la rime trouvée
-                if (syllabesRime.nb == syllabes.nb && syllabesRime.max == syllabes.max && natureEquals(data.result[k], data.keys.json[2])) { // Teste nbsyllabes, nbmax et la nature
+                syllabesRime = syllabify(rime);
+                if (syllabesRime.nb == syllabes.nb && syllabesRime.max == syllabes.max && natureEquals(data.result[k], data.keys.json[2])) {
                     rimesArray.push(rime);
                 }
             }
@@ -224,14 +224,14 @@ function getRandomPoem() {
         if (this.readyState === 4) {
             if (this.status >= 200 && this.status < 400) {
                 var data = this.responseText;
-                data = JSON.parse(data); // Json du poeme avec : poeme, auteur, titre et url
+                data = JSON.parse(data);
                 var poeme = data.poeme.replace(/[^\S\n]/g, '</span> <span class="mot1">');
-                poeme = poeme.replace(/\r\n|\r|\n/g, '</span></span><br><span class="vers"><span class="mot1">'); // replace les sauts de ligne
+                poeme = poeme.replace(/\r\n|\r|\n/g, '</span></span><br><span class="vers"><span class="mot1">');
                 poeme = '<span class="vers"><span class="mot1">' + poeme + '</span></span>';
                 document.getElementById("meta").innerHTML = '<h1><a href="' + data.url + '">' + data.titre + '</a></h1><br> de ' + data.auteur + '<br><br>';
                 poemDIV.innerHTML = poeme;
-                poemDIV.innerHTML = poemDIV.innerHTML.replace(new RegExp(escapeRegExp('<span class="vers"><span class="mot1"></span></span>'), 'g'), ""); // Clean les span vides
-                if (document.body.addEventListener) // Lier le clic mot à la fonction de traitement
+                poemDIV.innerHTML = poemDIV.innerHTML.replace(new RegExp(escapeRegExp('<span class="vers"><span class="mot1"></span></span>'), 'g'), "");
+                if (document.body.addEventListener)
                 {
                     document.body.addEventListener('click', rimifyBinder, false);
                 }
@@ -239,7 +239,7 @@ function getRandomPoem() {
                 {
                     document.body.attachEvent('onclick', rimifyBinder); //pour IE
                 }
-            } else { // En cas d'erreur lors du chargement du poème
+            } else {
                 metaDIV.innerHTML = "Erreur lors de la récupération du poème. Réessayer.<br>";
                 poemDIV.innerHTML = '<div id="poem"><button id="getRandomPoem" onclick="getRandomPoem();">Poème au hasard</button></div>';
             }
@@ -253,11 +253,11 @@ window.onload = function() {
     var poemDIV = document.getElementById('example');
     var poeme = poemDIV.innerHTML;
     poeme = poeme.replace(/[^\S\n]/g, '</span> <span class="mot1">');
-    poeme = poeme.replace(/\r\n|\r|\n/g, '</span></span><br><span class="vers"><span class="mot1">'); // replace les sauts de ligne
+    poeme = poeme.replace(/\r\n|\r|\n/g, '</span></span><br><span class="vers"><span class="mot1">');
     poeme = '<span class="vers"><span class="mot1">' + poeme + '</span></span>';
     poemDIV.innerHTML = poeme;
-    poemDIV.innerHTML = poemDIV.innerHTML.replace(new RegExp(escapeRegExp('<span class="vers"><span class="mot1"></span></span>'), 'g'), ""); // Clean les span vides
-    if (document.body.addEventListener) // Lier le clic mot à la fonction de traitement
+    poemDIV.innerHTML = poemDIV.innerHTML.replace(new RegExp(escapeRegExp('<span class="vers"><span class="mot1"></span></span>'), 'g'), "");
+    if (document.body.addEventListener)
     {
         document.body.addEventListener('click', rimifyBinder, false);
     } else
@@ -294,22 +294,22 @@ function rimifyBinder(e)
         mot = mot.split(/[\.,\/#!$%\^&\*;\?:{}=\_`~()]/g)[0];// Si il y a de la ponctuation on la coupe du mot
         var rimes, k = 0;
         for (var i = 0; i < window.motsArray.length; i++) { // Vérifier si les rimes du mot ne sont pas déjà chargées
-            if (window.motsArray[i].mot == mot) { // Si le mot est chargé mais pas rimé
-                rimes = window.motsArray[i].rimes; // On charge les rimes
-                k = 0; // On part de la première pour vérifier la métrique
-                i = window.motsArray.length; // On sort de la boucle for et on passe à la suite
-            } else if (window.motsArray[i].rimes.indexOf(mot) > -1) { // Si le mot correspond à une rime déjà chargée
-                rimes = window.motsArray[i].rimes; // On charge les rimes
-                k = window.motsArray[i].index;
-                k++; // On part de la rime suivante
-                if (k == rimes.length) { // Si c'était la dernière rime
-                    if (mot != null && window.motsArray[i].rimes.indexOf(mot) < 0) { // Si c'est la première fois qu'on atteint la fin des rimes du mot initial et que le mot est pas dans le tableau de rimes
+            if (window.motsArray[i].mot == mot) {
+                rimes = window.motsArray[i].rimes;
+                k = 0;
+                i = window.motsArray.length;
+            } else if (window.motsArray[i].rimes.indexOf(mot) > -1) {
+                rimes = window.motsArray[i].rimes;
+                k = window.motsArray[i].indexOf(mot);
+                k++;
+                if (k == rimes.length) {
+                    if (mot != null && window.motsArray[i].rimes.indexOf(mot) < 0) {
                         window.motsArray[i].rimes = window.motsArray[i].rimes.unshift(mot); // On ajoute le mot initial aux rimes
                         window.motsArray[i].mot = null; // On indique que le mot initial est dans le tableau de rimes
                     }
-                    k = 0; // On revient à la première
+                    k = 0;
                 }
-                i = window.motsArray.length; // On sort de la boucle for et on passe à la suite
+                i = window.motsArray.length;
             }
         }
         if (rimes == null) { // Si les rimes n'ont pas été chargées, on les charge et on les traite
@@ -325,28 +325,28 @@ function rimifyBinder(e)
 // Pour le mot donné, cherche la première rime appropriée et remplace, puis actualise le tableau des rimes chargées
 function traitementRimes(k, vers, mot, rimes, e, isNew) {
     var index = k;
-    var position = vers.indexOf(mot); // Besoin de l'index du début du mot cliqué dans le cas de répétitions dans un même vers
+    var position = vers.indexOf(mot);
     var metrique = metrify(vers), metriqueRime, versRime;
     do {
-        versRime = vers.replaceBetween(position, position + mot.length, rimes[k % rimes.length]); // On teste la rime avec la métrique
+        versRime = vers.replaceBetween(position, position + mot.length, rimes[k % rimes.length]);
         metriqueRime = metrify(versRime);
-        if (metriqueRime.nbsyllabes[0].nb == metrique.nbsyllabes[0].nb && metriqueRime.nbsyllabes[0].max == metrique.nbsyllabes[0].max) { // Stricte égalité, pas de prise en compte des autres cas possibles par sûreté
+        if (metriqueRime.nbsyllabes[0].nb == metrique.nbsyllabes[0].nb && metriqueRime.nbsyllabes[0].max == metrique.nbsyllabes[0].max) {
             e.target.innerHTML = e.target.innerHTML.replace(mot, rimes[k % rimes.length]);
-            if (isNew) { // Si le mot est nouveau, on ajoute un objet au tableau de rimes chargées avec : le mot initial, la rime actuelle, les rimes, et l'index de la rime actuelle
+            if (isNew) {
                 window.motsArray = window.motsArray.concat({mot: mot, rime: rimes[k % rimes.length], rimes: rimes, index: k % rimes.length});
             } else {
-                for (var i = 0; i < window.motsArray.length; i++) { // Si le mot n'est pas nouveau, on actualise l'objet correspondant dans motsArray
+                for (var i = 0; i < window.motsArray.length; i++) {
                     if (window.motsArray[i].mot == mot || window.motsArray[i].rimes.indexOf(mot) > -1) {
                         window.motsArray[i].rime = rimes[k % rimes.length];
                         window.motsArray[i].index = k % rimes.length;
                     }
                 }
             }
-            k = index + rimes.length; // On sort de la boucle
+            k = index + rimes.length;
         } else {
             k++;
         }
-    } while (k % rimes.length != index) // Tant qu'on revient pas sur la rime initiale du tableau, on continue à le parcourir
+    } while (k % rimes.length != index)
     return window.motsArray;
 }
 

@@ -4,7 +4,7 @@ function syllabify(s) {
     if (s.toLowerCase() == "pays") { // Exception pour ce mot ingérable autrement
         return ({syllabes: ["pa", "ys"], nb: 2, max: 2});
     }
-    if (!s.trim().match(/[a-zA-Z]/g)){
+    if (!s.trim().match(/[a-zA-Z]/g)) {
         return {syllabes: [], nb: 0, max: 0};
     }
     var consonnes = ['b', 'B', 'c', 'C', 'ç', 'Ç', 'd', 'D', 'f', 'F', 'g', 'G', 'h', 'H', 'j', 'J', 'k', 'K', 'l', 'L', 'm', 'M', 'n', 'N', 'ñ', 'Ñ', 'p', 'P', 'q', 'Q', 'r', 'R', 's', 'S', 't', 'T', 'v', 'V', 'w', 'W', 'x', 'X', 'y', 'Y', 'z', 'Z', '-'];
@@ -146,22 +146,22 @@ function elisioner(mots) {
 
 // Compte le nombre de syllabes des vers d'un poème en suivant les règles classiques d'élision
 function metrify(s) {
-    s = s.replace(/[\.,\/#!$%\^&\*;\?:{}=\_`~()]/g, ""); // retire la ponctuation
-    s = s.replace(/[0-9]/g, ''); // retire les nombres
-    s = s.replace(/\s{2,}/g, " "); // retire les doubles espaces
+    s = s.replace(/[\.,\/#!$%\^&\*;\?:{}=\_`~()]/g, "");
+    s = s.replace(/[0-9]/g, '');
+    s = s.replace(/\s{2,}/g, " ");
     s = s.replace(/œ/g, "oe");
     s = s.replace(/æ/g, "ae");
     s = s.replace(/\r\n|\r|\n/g, "<br>");
-    var vers = s.split("<br>"); // range chaque vers dans un tableau
-    vers = vers.filter(function(v) { // retire les strings vides
+    var vers = s.split("<br>");
+    vers = vers.filter(function(v) {
         return v !== ''
     });
     var mots = [];
     var nbsyllabes = [];
 
     for (var i = 0; i < vers.length; i++) {
-        var lesmots = vers[i].split(" "); // Sépare les mots de chaque vers
-        lesmots = lesmots.filter(function(v) { // retire les strings vides
+        var lesmots = vers[i].split(" ");
+        lesmots = lesmots.filter(function(v) {
             return v !== ''
         });
         mots[i] = lesmots; // range les mots dans un tableau différent pour chaque vers
@@ -177,7 +177,7 @@ function metrify(s) {
 
 // Récupère les rimes d'un mot ayant le même nombre de syllabes et la même nature (Verbe, nom, adjectif...)
 function rimify(s) {
-    var syllabes = syllabify(s), request;
+    var syllabes = syllabify(s);
 
     // Parse la nature de la rime et compare à celle du mot
     function natureEquals(rime, nature) {
@@ -199,8 +199,8 @@ function rimify(s) {
         if (data.result != null) {
             for (var k = 0; k < data.result.length; k++) {
                 rime = data.result[k].word;
-                syllabesRime = syllabify(rime); // Compte le nombre de syllabes de la rime trouvée
-                if (syllabesRime.nb == syllabes.nb && syllabesRime.max == syllabes.max && natureEquals(data.result[k], data.keys.json[2])) { // Teste nbsyllabes, nbmax et la nature
+                syllabesRime = syllabify(rime);
+                if (syllabesRime.nb == syllabes.nb && syllabesRime.max == syllabes.max && natureEquals(data.result[k], data.keys.json[2])) {
                     rimesArray.push(rime);
                 }
             }
@@ -226,8 +226,7 @@ function getRandomPoem() {
             if (this.status >= 200 && this.status < 400) {
                 var data = this.responseText;
                 data = JSON.parse(data);
-                console.log(data); // Json du poeme avec : poeme, auteur, titre et url
-                var poeme = data.poeme.replace(/\r\n|\r|\n/g, "<br>"); // replace les sauts de ligne
+                var poeme = data.poeme.replace(/\r\n|\r|\n/g, "<br>");
                 document.getElementById("meta").innerHTML = '<h1><a href="' + data.url + '">' + data.titre + '</a></h1><br> de ' + data.auteur + '<br><br>';
                 poemDIV.innerHTML = poeme;
             } else {
