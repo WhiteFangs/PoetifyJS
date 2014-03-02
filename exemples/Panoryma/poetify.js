@@ -4,7 +4,7 @@ function syllabify(s) {
     if (s.toLowerCase() == "pays") { // Exception pour ce mot ingérable autrement
         return ({syllabes: ["pa", "ys"], nb: 2, max: 2});
     }
-    if (!s.trim().match(/[a-zA-Z]/g)){
+    if (!s.trim().match(/[a-zA-Z]/g)) {
         return {syllabes: [], nb: 0, max: 0};
     }
     var consonnes = ['b', 'B', 'c', 'C', 'ç', 'Ç', 'd', 'D', 'f', 'F', 'g', 'G', 'h', 'H', 'j', 'J', 'k', 'K', 'l', 'L', 'm', 'M', 'n', 'N', 'ñ', 'Ñ', 'p', 'P', 'q', 'Q', 'r', 'R', 's', 'S', 't', 'T', 'v', 'V', 'w', 'W', 'x', 'X', 'y', 'Y', 'z', 'Z', '-'];
@@ -209,11 +209,18 @@ function rimify(s, traitement) {
                 }
             }
         }
-        return traitement(rimesArray);
+        if (rimesArray.length != 0) {
+            if (data.result[0].feminine == 1) {
+                return traitement({rimes: rimesArray, isFem: true});
+            }
+            return traitement({rimes: rimesArray, isFem: false});
+        } else {
+            return false;
+        }
     };
 
     // Instantiation de la requête JSONP
-    var query = "select * from json where url =\"http://drime.a3nm.net/query?query=" + s + "&nsyl=&json=on\" ";
+    var query = "select * from json where url =\"http://drime.a3nm.net/query?query=" + s + "&gender=on&nsyl=&json=on\" ";
     var getRimes = new YQLQuery(query, callback);
     getRimes.fetch();
 }
@@ -229,12 +236,8 @@ function getRandomPoem() {
             if (this.status >= 200 && this.status < 400) {
                 var data = this.responseText;
                 data = JSON.parse(data);
-                var poeme = data.poeme.replace(/[^\S\n]/g, '</span> <span class="mot1">');
-                poeme = poeme.replace(/\r\n|\r|\n/g, '</span></span><br><span class="vers"><span class="mot1">');
-                poeme = '<span class="vers"><span class="mot1">' + poeme + '</span></span>';
+                parsePoemToHTML(data.poeme, poemDIV);
                 document.getElementById("meta").innerHTML = '<h1><a href="' + data.url + '">' + data.titre + '</a></h1><br> de ' + data.auteur + '<br><br>';
-                poemDIV.innerHTML = poeme;
-                poemDIV.innerHTML = poemDIV.innerHTML.replace(new RegExp(escapeRegExp('<span class="vers"><span class="mot1"></span></span>'), 'g'), "");
                 if (document.body.addEventListener)
                 {
                     document.body.addEventListener('click', rimifyBinder, false);
@@ -255,12 +258,7 @@ function getRandomPoem() {
 
 window.onload = function() {
     var poemDIV = document.getElementById('example');
-    var poeme = poemDIV.innerHTML;
-    poeme = poeme.replace(/[^\S\n]/g, '</span> <span class="mot1">');
-    poeme = poeme.replace(/\r\n|\r|\n/g, '</span></span><br><span class="vers"><span class="mot1">');
-    poeme = '<span class="vers"><span class="mot1">' + poeme + '</span></span>';
-    poemDIV.innerHTML = poeme;
-    poemDIV.innerHTML = poemDIV.innerHTML.replace(new RegExp(escapeRegExp('<span class="vers"><span class="mot1"></span></span>'), 'g'), "");
+    parsePoemToHTML(poemDIV.innerHTML, poemDIV);
     if (document.body.addEventListener)
     {
         document.body.addEventListener('click', rimifyBinder, false);
@@ -269,16 +267,6 @@ window.onload = function() {
         document.body.attachEvent('onclick', rimifyBinder); //pour IE
     }
 };
-
-/*
- * TODO
- * 
- * Gestion des mots avec apostrophe avant !
- * 
- */
-
-
-
 
 // Variable globale des rimes chargées
 window.motsArray = [];
@@ -292,19 +280,24 @@ function rimifyBinder(e)
     {
         var mot = e.target.innerHTML.replace('<span class="mot1">', '').replace('</span>', '');
         var vers = e.target.parentNode.innerHTML;
-        vers = replaceAll('<span class="mot1">', '', vers);
-        vers = replaceAll('</span>', '', vers);
-        vers = replaceAll('<span class="vers">', '', vers);
+        vers = unparsePoemFromHTML(vers);
         mot = mot.split(/[\.,\/#!$%\^&\*;\?:{}=\_`~()]/g)[0];// Si il y a de la ponctuation on la coupe du mot
-        var rimes, k = 0;
+        var premot = undefined;
+        if (mot.indexOf("'") > -1) {
+            premot = mot.split("'")[0];
+            mot = mot.split("'")[1];
+        }
+        var rimes, k = 0, isFem;
         for (var i = 0; i < window.motsArray.length; i++) { // Vérifier si les rimes du mot ne sont pas déjà chargées
             if (window.motsArray[i].mot == mot) {
                 rimes = window.motsArray[i].rimes;
+                isFem = window.motsArray[i].isFem;
                 k = 0;
                 i = window.motsArray.length;
             } else if (window.motsArray[i].rimes.indexOf(mot) > -1) {
                 rimes = window.motsArray[i].rimes;
                 k = window.motsArray[i].rimes.indexOf(mot);
+                isFem = window.motsArray[i].isFem;
                 k++;
                 if (k == rimes.length) {
                     if (mot != null && window.motsArray[i].rimes.indexOf(mot) < 0) {
@@ -317,27 +310,35 @@ function rimifyBinder(e)
             }
         }
         if (rimes == null) { // Si les rimes n'ont pas été chargées, on les charge et on les traite
-            rimify(mot, function(rimes) {
-                traitementRimes(k, vers, mot, rimes, e, true);
+            rimify(mot, function(rimesObj) {
+                traitementRimes(k, vers, mot, rimesObj.rimes, e, premot, rimesObj.isFem, true);
             });
         } else { // Sinon on les traite
-            traitementRimes(k, vers, mot, rimes, e, false);
+            traitementRimes(k, vers, mot, rimes, e, premot, isFem, false);
         }
     }
 }
 
-// Pour le mot donné, cherche la première rime appropriée et remplace, puis actualise le tableau des rimes chargées
-function traitementRimes(k, vers, mot, rimes, e, isNew) {
-    var index = k;
-    var position = vers.indexOf(mot);
-    var metrique = metrify(vers), metriqueRime, versRime;
+// Pour le mot donné, cherche la première rime appropriée, puis remplace dans le poème et actualise le tableau des rimes chargées
+function traitementRimes(k, vers, mot, rimes, e, premot, isFem, isNew) {
+    var index = k, position;
+    if (premot !== undefined) {
+        position = vers.indexOf(premot);
+    } else {
+        position = vers.indexOf(mot);
+    }
+    var metrique = metrify(vers), metriqueRime, versRime, premotRime;
     do {
-        versRime = vers.replaceBetween(position, position + mot.length, rimes[k % rimes.length]);
+        if (premot !== undefined) {
+            premotRime = genrifyPremot(premot, rimes[k % rimes.length], isFem);
+            versRime = vers.replaceBetween(position, position + (premot + mot).length + 1, premotRime + rimes[k % rimes.length]);
+        } else {
+            versRime = vers.replaceBetween(position, position + mot.length, rimes[k % rimes.length]);
+        }
         metriqueRime = metrify(versRime);
         if (metriqueRime.nbsyllabes[0].nb == metrique.nbsyllabes[0].nb && metriqueRime.nbsyllabes[0].max == metrique.nbsyllabes[0].max) {
-            e.target.innerHTML = e.target.innerHTML.replace(mot, rimes[k % rimes.length]);
             if (isNew) {
-                window.motsArray = window.motsArray.concat({mot: mot, rime: rimes[k % rimes.length], rimes: rimes, index: k % rimes.length});
+                window.motsArray = window.motsArray.concat({mot: mot, rime: rimes[k % rimes.length], rimes: rimes, index: k % rimes.length, isFem: isFem});
             } else {
                 for (var i = 0; i < window.motsArray.length; i++) {
                     if (window.motsArray[i].mot == mot || window.motsArray[i].rimes.indexOf(mot) > -1) {
@@ -346,12 +347,68 @@ function traitementRimes(k, vers, mot, rimes, e, isNew) {
                     }
                 }
             }
+            if (premot !== undefined) {
+                e.target.innerHTML = e.target.innerHTML.replace(premot + "'", premotRime);
+                e.target.innerHTML = e.target.innerHTML.replace(mot, rimes[k % rimes.length]);
+                var poeme = e.target.parentNode.parentNode.innerHTML;
+                poeme = unparsePoemFromHTML(poeme);
+                parsePoemToHTML(poeme, e.target.parentNode.parentNode);
+            } else {
+                e.target.innerHTML = e.target.innerHTML.replace(mot, rimes[k % rimes.length]);
+            }
             k = index + rimes.length;
         } else {
             k++;
         }
     } while (k % rimes.length != index)
     return window.motsArray;
+}
+
+// Adapte le premot au genre du nouveau mot qui le suit (la nouvelle rime)
+function genrifyPremot(premot, rime, isFem) {
+    var elision = ['a', 'A', 'á', 'Á', 'à', 'À', 'â', 'Â', 'e', 'E', 'é', 'É', 'è', 'È', 'ê', 'Ê', 'í', 'Í', 'o', 'ó', 'O', 'Ó', 'ô', 'Ô', 'ú', 'Ú', 'i', 'I', 'u', 'U', 'ü', 'Ü', 'û', 'Û', 'ï', 'Ï', 'î', 'Î', 'h', 'H'];
+    if (elision.indexOf(rime.charAt(0)) > -1) {
+        return premot + "'";
+    }
+    if (premot.toLowerCase() == "d") {
+        if (isFem) {
+            return premot + "e la ";
+        } else {
+            return premot + "u ";
+        }
+    }
+    if (premot.toLowerCase() == "l") {
+        if (isFem) {
+            return premot + "a ";
+        } else {
+            return premot + "e ";
+        }
+    }
+    if (premot.toLowerCase() == "j" || premot.toLowerCase() == "n" || premot.toLowerCase() == "m") {
+        return premot + "e ";
+    }
+    if (premot.toLowerCase() == "t") {
+        return premot + "u ";
+    }
+    if (premot.toLowerCase() == "c") {
+        return premot + "ela ";
+    }
+    return premot + "'";
+}
+
+function parsePoemToHTML(poeme, poemDIV) {
+    poeme = poeme.replace(/[^\S\n]/g, '</span> <span class="mot1">');
+    poeme = poeme.replace(/\r\n|\r|\n/g, '</span></span><br><span class="vers"><span class="mot1">');
+    poeme = '<span class="vers"><span class="mot1">' + poeme + '</span></span>';
+    poemDIV.innerHTML = poeme;
+    poemDIV.innerHTML = poemDIV.innerHTML.replace(new RegExp(escapeRegExp('<span class="vers"><span class="mot1"></span></span>'), 'g'), "");
+}
+
+function unparsePoemFromHTML(poeme) {
+    poeme = replaceAll('<span class="mot1">', '', poeme);
+    poeme = replaceAll('</span>', '', poeme);
+    poeme = replaceAll('<span class="vers">', '', poeme);
+    return poeme;
 }
 
 // Requête JSONP via l'API Yahoo
