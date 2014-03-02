@@ -283,27 +283,18 @@ function rimifyBinder(e)
         vers = unparsePoemFromHTML(vers);
         mot = mot.split(/[\.,\/#!$%\^&\*;\?:{}=\_`~()]/g)[0];// Si il y a de la ponctuation on la coupe du mot
         var premot = undefined;
-        if (mot.indexOf("'") > -1) {
-            premot = mot.split("'")[0];
-            mot = mot.split("'")[1];
+        if (mot.indexOf("’") > -1) {
+            premot = mot.split("’")[0];
+            mot = mot.split("’")[1];
         }
         var rimes, k = 0, isFem;
         for (var i = 0; i < window.motsArray.length; i++) { // Vérifier si les rimes du mot ne sont pas déjà chargées
-            if (window.motsArray[i].mot == mot) {
-                rimes = window.motsArray[i].rimes;
-                isFem = window.motsArray[i].isFem;
-                k = 0;
-                i = window.motsArray.length;
-            } else if (window.motsArray[i].rimes.indexOf(mot) > -1) {
+            if (window.motsArray[i].rimes.indexOf(mot) > -1) {
                 rimes = window.motsArray[i].rimes;
                 k = window.motsArray[i].rimes.indexOf(mot);
                 isFem = window.motsArray[i].isFem;
                 k++;
                 if (k == rimes.length) {
-                    if (mot != null && window.motsArray[i].rimes.indexOf(mot) < 0) {
-                        window.motsArray[i].rimes = window.motsArray[i].rimes.unshift(mot); // On ajoute le mot initial aux rimes
-                        window.motsArray[i].mot = null; // On indique que le mot initial est dans le tableau de rimes
-                    }
                     k = 0;
                 }
                 i = window.motsArray.length;
@@ -318,6 +309,12 @@ function rimifyBinder(e)
         }
     }
 }
+
+/*
+ * TODO
+ * 
+ * Majuscules en début de vers après changement de la première rime
+ */
 
 // Pour le mot donné, cherche la première rime appropriée, puis remplace dans le poème et actualise le tableau des rimes chargées
 function traitementRimes(k, vers, mot, rimes, e, premot, isFem, isNew) {
@@ -336,12 +333,15 @@ function traitementRimes(k, vers, mot, rimes, e, premot, isFem, isNew) {
             versRime = vers.replaceBetween(position, position + mot.length, rimes[k % rimes.length]);
         }
         metriqueRime = metrify(versRime);
-        if (metriqueRime.nbsyllabes[0].nb == metrique.nbsyllabes[0].nb && metriqueRime.nbsyllabes[0].max == metrique.nbsyllabes[0].max) {
+        if (metriqueRime.nbsyllabes[0].nb == metrique.nbsyllabes[0].nb && metriqueRime.nbsyllabes[0].max == metrique.nbsyllabes[0].max && mot != rimes[k % rimes.length]) {
             if (isNew) {
-                window.motsArray = window.motsArray.concat({mot: mot, rime: rimes[k % rimes.length], rimes: rimes, index: k % rimes.length, isFem: isFem});
+                if(rimes.indexOf(mot) < 0){
+                    rimes = rimes.concat(mot);
+                }
+                window.motsArray = window.motsArray.concat({rime: rimes[k % rimes.length], rimes: rimes, index: k % rimes.length, isFem: isFem});
             } else {
                 for (var i = 0; i < window.motsArray.length; i++) {
-                    if (window.motsArray[i].mot == mot || window.motsArray[i].rimes.indexOf(mot) > -1) {
+                    if (window.motsArray[i].rimes.indexOf(mot) > -1) {
                         window.motsArray[i].rime = rimes[k % rimes.length];
                         window.motsArray[i].index = k % rimes.length;
                     }
@@ -384,7 +384,7 @@ function genrifyPremot(premot, rime, isFem) {
             return premot + "e ";
         }
     }
-    if (premot.toLowerCase() == "j" || premot.toLowerCase() == "n" || premot.toLowerCase() == "m") {
+    if (premot.toLowerCase() == "j" || premot.toLowerCase() == "n" || premot.toLowerCase() == "m" || premot.toLowerCase() == "s") {
         return premot + "e ";
     }
     if (premot.toLowerCase() == "t") {
@@ -407,6 +407,7 @@ function parsePoemToHTML(poeme, poemDIV) {
 function unparsePoemFromHTML(poeme) {
     poeme = replaceAll('<span class="mot1">', '', poeme);
     poeme = replaceAll('</span>', '', poeme);
+    poeme = replaceAll('<br>', '\n', poeme);
     poeme = replaceAll('<span class="vers">', '', poeme);
     return poeme;
 }
