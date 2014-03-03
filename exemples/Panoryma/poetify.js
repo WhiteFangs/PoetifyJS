@@ -47,7 +47,7 @@ function syllabify(s) {
                     } else {
                         coupure = 2;
                     }
-                } else if ((['t', 'T', 'p', 'P', 'd', 'D'].indexOf(s.charAt(i + 1)) > -1) && (['s', 'S'].indexOf(s.charAt(i + 2)) > -1)) { // pour des mots comme "verts" ou "corps"
+                } else if ((['t', 'T', 'p', 'P'].indexOf(s.charAt(i + 1)) > -1) && (['s', 'S'].indexOf(s.charAt(i + 2)) > -1)) { // pour des mots comme "verts" ou "corps"
                     coupure = 0;
                 } else {
                     coupure = 2;
@@ -287,6 +287,8 @@ function rimifyBinder(e)
             premot = mot.split("’")[0];
             mot = mot.split("’")[1];
         }
+        mot = mot.toLowerCase();
+        vers = vers.toLowerCase();
         var rimes, k = 0, isFem;
         for (var i = 0; i < window.motsArray.length; i++) { // Vérifier si les rimes du mot ne sont pas déjà chargées
             if (window.motsArray[i].rimes.indexOf(mot) > -1) {
@@ -310,12 +312,6 @@ function rimifyBinder(e)
     }
 }
 
-/*
- * TODO
- * 
- * Majuscules en début de vers après changement de la première rime
- */
-
 // Pour le mot donné, cherche la première rime appropriée, puis remplace dans le poème et actualise le tableau des rimes chargées
 function traitementRimes(k, vers, mot, rimes, e, premot, isFem, isNew) {
     var index = k, position;
@@ -335,7 +331,7 @@ function traitementRimes(k, vers, mot, rimes, e, premot, isFem, isNew) {
         metriqueRime = metrify(versRime);
         if (metriqueRime.nbsyllabes[0].nb == metrique.nbsyllabes[0].nb && metriqueRime.nbsyllabes[0].max == metrique.nbsyllabes[0].max && mot != rimes[k % rimes.length]) {
             if (isNew) {
-                if(rimes.indexOf(mot) < 0){
+                if (rimes.indexOf(mot) < 0) {
                     rimes = rimes.concat(mot);
                 }
                 window.motsArray = window.motsArray.concat({rime: rimes[k % rimes.length], rimes: rimes, index: k % rimes.length, isFem: isFem});
@@ -348,14 +344,14 @@ function traitementRimes(k, vers, mot, rimes, e, premot, isFem, isNew) {
                 }
             }
             if (premot !== undefined) {
-                e.target.innerHTML = e.target.innerHTML.replace(premot + "'", premotRime);
-                e.target.innerHTML = e.target.innerHTML.replace(mot, rimes[k % rimes.length]);
-                var poeme = e.target.parentNode.parentNode.innerHTML;
-                poeme = unparsePoemFromHTML(poeme);
-                parsePoemToHTML(poeme, e.target.parentNode.parentNode);
+                e.target.innerHTML = e.target.innerHTML.toLowerCase().replace(premot + "'", premotRime);
+                e.target.innerHTML = e.target.innerHTML.toLowerCase().replace(mot, rimes[k % rimes.length]);
             } else {
-                e.target.innerHTML = e.target.innerHTML.replace(mot, rimes[k % rimes.length]);
+                e.target.innerHTML = e.target.innerHTML.toLowerCase().replace(mot, rimes[k % rimes.length]);
             }
+            var poeme = e.target.parentNode.parentNode.innerHTML;
+            poeme = unparsePoemFromHTML(poeme);
+            parsePoemToHTML(poeme, e.target.parentNode.parentNode);
             k = index + rimes.length;
         } else {
             k++;
@@ -397,10 +393,16 @@ function genrifyPremot(premot, rime, isFem) {
 }
 
 function parsePoemToHTML(poeme, poemDIV) {
-    poeme = poeme.replace(/[^\S\n]/g, '</span> <span class="mot1">');
-    poeme = poeme.replace(/\r\n|\r|\n/g, '</span></span><br><span class="vers"><span class="mot1">');
-    poeme = '<span class="vers"><span class="mot1">' + poeme + '</span></span>';
-    poemDIV.innerHTML = poeme;
+    var poem = '';
+    poeme.split(/\r\n|\r|\n/g).forEach(function(vers) {
+        vers = vers.charAt(0).toUpperCase() + vers.slice(1);
+        poem += vers + '\n';
+    });
+    poem = poem.slice(0, -1);
+    poem = poem.replace(/[^\S\n]/g, '</span> <span class="mot1">');
+    poem = poem.replace(/\r\n|\r|\n/g, '</span></span><br><span class="vers"><span class="mot1">');
+    poem = '<span class="vers"><span class="mot1">' + poem + '</span></span>';
+    poemDIV.innerHTML = poem;
     poemDIV.innerHTML = poemDIV.innerHTML.replace(new RegExp(escapeRegExp('<span class="vers"><span class="mot1"></span></span>'), 'g'), "");
 }
 
