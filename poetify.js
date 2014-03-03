@@ -47,7 +47,7 @@ function syllabify(s) {
                     } else {
                         coupure = 2;
                     }
-                } else if ((['t', 'T', 'p', 'P', 'd', 'D'].indexOf(s.charAt(i + 1)) > -1) && (['s', 'S'].indexOf(s.charAt(i + 2)) > -1)) { // pour des mots comme "verts" ou "corps"
+                } else if ((['t', 'T', 'p', 'P'].indexOf(s.charAt(i + 1)) > -1) && (['s', 'S'].indexOf(s.charAt(i + 2)) > -1)) { // pour des mots comme "verts" ou "corps"
                     coupure = 0;
                 } else {
                     coupure = 2;
