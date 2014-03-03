@@ -222,7 +222,6 @@ function rimify(s) {
 // Get Random Poem from Wikisource
 function getRandomPoem() {
     var poemDIV = document.getElementById("poem"), request;
-    poemDIV.innerHTML = '<img src="./loader.gif" alt="Loading" />';
     request = new XMLHttpRequest;
     request.open('GET', './getRandomPoem.php', true);
     document.body.style.cursor = "wait";
@@ -238,7 +237,6 @@ function getRandomPoem() {
                 poemDIV.innerHTML = poeme;
             } else {
                 document.getElementById("meta").innerHTML = "Erreur lors de la récupération du poème. Réessayer.<br>";
-                poemDIV.innerHTML = '<div id="poem"><button id="getRandomPoem" onclick="getRandomPoem();">Poème au hasard</button></div>';
             }
         }
     }
