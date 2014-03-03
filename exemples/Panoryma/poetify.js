@@ -235,6 +235,7 @@ function getRandomPoem() {
         if (this.readyState === 4) {
             if (this.status >= 200 && this.status < 400) {
                 var data = this.responseText;
+                data = data.replace(/Warning([^;]*){/, '{');
                 data = JSON.parse(data);
                 parsePoemToHTML(data.poeme, poemDIV);
                 document.getElementById("meta").innerHTML = '<h1><a href="' + data.url + '">' + data.titre + '</a></h1><br> de ' + data.auteur + '<br><br>';
