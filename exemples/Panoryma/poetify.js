@@ -215,6 +215,7 @@ function rimify(s, traitement) {
             }
             return traitement({rimes: rimesArray, isFem: false});
         } else {
+            document.body.style.cursor = "default";
             return false;
         }
     };
@@ -231,7 +232,9 @@ function getRandomPoem() {
     metaDIV.innerHTML = '<img src="./loader.gif" alt="Loading" />';
     request = new XMLHttpRequest;
     request.open('GET', './getRandomPoem.php', true);
+    document.body.style.cursor = "wait";
     request.onreadystatechange = function() {
+        document.body.style.cursor = "default";
         if (this.readyState === 4) {
             if (this.status >= 200 && this.status < 400) {
                 var data = this.responseText;
@@ -279,6 +282,7 @@ function rimifyBinder(e)
     var target = e.target || e.srcElement;
     if (target.className == "mot1")
     {
+        document.body.style.cursor = "progress";
         var mot = e.target.innerHTML.replace('<span class="mot1">', '').replace('</span>', '');
         var vers = e.target.parentNode.innerHTML;
         vers = unparsePoemFromHTML(vers);
@@ -358,6 +362,7 @@ function traitementRimes(k, vers, mot, rimes, e, premot, isFem, isNew) {
             k++;
         }
     } while (k % rimes.length != index)
+    document.body.style.cursor = "default";
     return window.motsArray;
 }
 

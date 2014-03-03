@@ -225,7 +225,9 @@ function getRandomPoem() {
     poemDIV.innerHTML = '<img src="./loader.gif" alt="Loading" />';
     request = new XMLHttpRequest;
     request.open('GET', './getRandomPoem.php', true);
+    document.body.style.cursor = "wait";
     request.onreadystatechange = function() {
+        document.body.style.cursor = "default";
         if (this.readyState === 4) {
             if (this.status >= 200 && this.status < 400) {
                 var data = this.responseText;
