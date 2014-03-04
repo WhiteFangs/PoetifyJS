@@ -146,7 +146,7 @@ function elisioner(mots) {
 
 // Compte le nombre de syllabes des vers d'un poème en suivant les règles classiques d'élision
 function metrify(s) {
-    s = s.replace(/[\.,\/#!$%\^&\*;\?:{}=\_`~()]/g, "");
+    s = s.replace(/[\.,…\/#!$%\^&\*;\?:{}=\_`~()]/g, "");
     s = s.replace(/[0-9]/g, '');
     s = s.replace(/\s{2,}/g, " ");
     s = s.replace(/œ/g, "oe");
@@ -216,6 +216,7 @@ function rimify(s, traitement) {
             return traitement({rimes: rimesArray, isFem: false});
         } else {
             document.body.style.cursor = "default";
+            window.motsArray = window.motsArray.concat({rime: s, rimes: [s], index: 0, isFem: false});
             return false;
         }
     };
@@ -240,7 +241,7 @@ function getRandomPoem() {
                 data = data.replace(/Warning([^;]*){/, '{');
                 data = JSON.parse(data);
                 parsePoemToHTML(data.poeme, poemDIV);
-                document.getElementById("meta").innerHTML = '<h1><a href="' + data.url + '">' + data.titre + '</a></h1><br> de ' + data.auteur + '<br><br>';
+                document.getElementById("meta").innerHTML = '<h1><a href="' + data.url + '">' + data.titre + '</a></h1> de ' + data.auteur + '<br>';
                 if (document.body.addEventListener)
                 {
                     document.body.addEventListener('click', rimifyBinder, false);
@@ -284,7 +285,7 @@ function rimifyBinder(e)
         var mot = e.target.innerHTML.replace('<span class="mot1">', '').replace('</span>', '');
         var vers = e.target.parentNode.innerHTML;
         vers = unparsePoemFromHTML(vers);
-        mot = mot.split(/[\.,\/#!$%\^&\*;\?:{}=\_`~()]/g)[0];// Si il y a de la ponctuation on la coupe du mot
+        mot = mot.split(/[\.,…\/#!$%\^&\*;\?:{}=\_`~()]/g)[0];// Si il y a de la ponctuation on la coupe du mot
         var premot = undefined;
         if (mot.indexOf("’") > -1) {
             premot = mot.split("’")[0];
@@ -347,10 +348,17 @@ function traitementRimes(k, vers, mot, rimes, e, premot, isFem, isNew) {
                 }
             }
             if (premot !== undefined) {
+                if (vers.charAt(position - 2) == '.' || vers.charAt(position - 2) == '!' || vers.charAt(position - 2) == '?' || vers.charAt(position - 2) == '…') {
+                    premot = premot.charAt(0).toUpperCase() + premot.slice(1);
+                }
                 e.target.innerHTML = e.target.innerHTML.toLowerCase().replace(premot + "'", premotRime);
                 e.target.innerHTML = e.target.innerHTML.toLowerCase().replace(mot, rimes[k % rimes.length]);
             } else {
-                e.target.innerHTML = e.target.innerHTML.toLowerCase().replace(mot, rimes[k % rimes.length]);
+                var rime = rimes[k % rimes.length];
+                if (vers.charAt(position - 2) == '.' || vers.charAt(position - 2) == '!' || vers.charAt(position - 2) == '?' || vers.charAt(position - 2) == '…') {
+                    rime = rimes[k % rimes.length].charAt(0).toUpperCase() + rimes[k % rimes.length].slice(1);
+                }
+                e.target.innerHTML = e.target.innerHTML.toLowerCase().replace(mot, rime);
             }
             var poeme = e.target.parentNode.parentNode.innerHTML;
             poeme = unparsePoemFromHTML(poeme);

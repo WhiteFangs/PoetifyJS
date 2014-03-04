@@ -146,7 +146,7 @@ function elisioner(mots) {
 
 // Compte le nombre de syllabes des vers d'un poème en suivant les règles classiques d'élision
 function metrify(s) {
-    s = s.replace(/[\.,\/#!$%\^&\*;\?:{}=\_`~()]/g, "");
+    s = s.replace(/[\.,…\/#!$%\^&\*;\?:{}=\_`~()]/g, "");
     s = s.replace(/[0-9]/g, '');
     s = s.replace(/\s{2,}/g, " ");
     s = s.replace(/œ/g, "oe");
