@@ -9,6 +9,8 @@ function getRandomPoem($i) {
     $poemUrl = str_replace("/index.php?title=:", "iki/", $poemUrl);
     // Take poem + title + author name from page
     $poemHTML = file_get_contents($poemUrl);
+    $poemHTML = str_replace('<br />
+<br />', '###', $poemHTML);
     $classPoem = 'poem';
     $classTitle = 'selflink';
     $classAuthor = 'headertemplate-author';
@@ -22,7 +24,7 @@ function getRandomPoem($i) {
     $author = $xpath->query("//*[@class='" . $classAuthor . "']");
     // if everything is there, return the array of elements
     if ($poemdivs->length > 0 && $title->length > 0 && $author->length > 0) {
-        for ($i = 0; $i < $poemdivs->length; $i++){
+        for ($i = 0; $i < $poemdivs->length; $i++) {
             $poem = $poem . $poemdivs->item($i)->nodeValue;
         }
         $arr = array('url' => $poemUrl, 'titre' => $title->item(0)->nodeValue, 'auteur' => $author->item(0)->nodeValue, 'poeme' => $poem, 'iterations' => $i);
