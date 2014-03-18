@@ -39,12 +39,12 @@ Fonctions
   - Les rimes ont la même nature que le mot donné
   - Utilise l'API de [drime.a3nm.net] (base de données [Lexique])
 
-### GetRandomPoem
+### GetPoem
 
-**Fonction pour, comme son nom l'indique, récupérer un poème au hasard sur [Wikisource]**
+**Fonction pour, comme son nom l'indique, récupérer un poème sur [Wikisource]**
 
   - Récupère le texte du poème, le titre, l'auteur et l'URL
-  - Utilise PHP et un Wikitool de redirection ["random article"] par [Erwin]
+  - Utilise PHP et gère la majorité des formats de pages de poèmes
 
 Utilisation
 ----
@@ -68,8 +68,6 @@ Exemples
 [drime.a3nm.net]:http://drime.a3nm.net/
 [Lexique]:http://www.lexique.org/
 [Wikisource]:http://fr.wikisource.org/
-["random article"]: http://toolserver.org/~erwin85/randomarticle.php
-[Erwin]: http://meta.wikimedia.org/wiki/User:Erwin
 [cette page]: http://fr.wikipedia.org/wiki/Di%C3%A9r%C3%A8se
 [Louphole]: http://www.louphole.com
     

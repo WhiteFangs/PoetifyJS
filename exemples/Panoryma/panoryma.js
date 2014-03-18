@@ -227,50 +227,55 @@ function rimify(s, traitement) {
     getRimes.fetch();
 }
 
-// Get Random Poem from Wikisource
-function getRandomPoem() {
+// Get Poem from Wikisource
+function getPoem(poemUrl) {
     var poemDIV = document.getElementById("poem"), request;
-    request = new XMLHttpRequest;
-    request.open('GET', './getRandomPoem.php', true);
-    document.body.style.cursor = "wait";
-    request.onreadystatechange = function() {
-        document.body.style.cursor = "default";
-        if (this.readyState === 4) {
-            if (this.status >= 200 && this.status < 400) {
-                var data = this.responseText;
-                data = data.replace(/Warning([^;]*){/, '{');
-                data = JSON.parse(data);
-                data.poeme = data.poeme.replace(/###/g, '\n');
-                data.poeme = data.poeme.replace(/\[[^;]*]/g, "");
-                parsePoemToHTML(data.poeme, poemDIV);
-                document.getElementById("meta").innerHTML = '<h1><a href="' + data.url + '">' + data.titre + '</a></h1> de ' + data.auteur + '<br>';
-                if (document.body.addEventListener)
-                {
-                    document.body.addEventListener('click', rimifyBinder, false);
+    if (poemUrl.indexOf("fr.wikisource.org/wiki/") < 0) {
+        poemDIV.innerHTML = "<br>";
+        document.getElementById("meta").innerHTML = "Veuillez entrez une adresse Wikisource valide.<br>";
+    } else {
+        request = new XMLHttpRequest;
+        request.open('POST', '../../getPoem.php', true);
+        document.body.style.cursor = "wait";
+        request.onreadystatechange = function() {
+            document.body.style.cursor = "default";
+            if (this.readyState === 4) {
+                if (this.status >= 200 && this.status < 400) {
+                    var data = this.responseText;
+                    data = data.replace(/Warning([^;]*){/, '{');
+                    if (data == "Erreur") {
+                        poemDIV.innerHTML = "<br>";
+                        document.getElementById("meta").innerHTML = "Erreur lors de la récupération du poème. Réessayer.<br>";
+                    } else {
+                        data = JSON.parse(data);
+                        data.poeme = data.poeme.replace(/###/g, '\n');
+                        data.poeme = data.poeme.replace(/\[[^;]*]/g, "");
+                        data.titre = data.titre.replace(/\//g, " - ");
+                        parsePoemToHTML(data.poeme, poemDIV);
+                        document.getElementById("meta").innerHTML = '<h1><a href="' + data.url + '">' + data.titre + '</a></h1><em> de ' + data.auteur + '</em><br>';
+                        if (document.body.addEventListener) {
+                            document.body.addEventListener('click', rimifyBinder, false);
+                        }
+                        else {
+                            document.body.attachEvent('onclick', rimifyBinder); //pour IE
+                        }
+                    }
+                } else {
+                    poemDIV.innerHTML = "<br>";
+                    document.getElementById("meta").innerHTML = "Erreur lors de la récupération du poème. Réessayer.<br>";
                 }
-                else
-                {
-                    document.body.attachEvent('onclick', rimifyBinder); //pour IE
-                }
-            } else {
-                document.getElementById("meta").innerHTML = "Erreur lors de la récupération du poème. Réessayer.<br>";
             }
         }
+        request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
+        request.send("poemUrl=" + poemUrl);
+        request = null;
     }
-    request.send();
-    request = null;
 }
 
 window.onload = function() {
-    var poemDIV = document.getElementById('poem');
-    parsePoemToHTML(poemDIV.innerHTML, poemDIV);
-    if (document.body.addEventListener)
-    {
-        document.body.addEventListener('click', rimifyBinder, false);
-    } else
-    {
-        document.body.attachEvent('onclick', rimifyBinder); //pour IE
-    }
+    var poemsUrl = ['http://fr.wikisource.org/wiki/Les_Fleurs_du_mal/1861/L%E2%80%99Albatros', 'http://fr.wikisource.org/wiki/El_Desdichado', 'http://fr.wikisource.org/wiki/Mon_r%C3%AAve_familier', 'http://fr.wikisource.org/wiki/Le_Pont_Mirabeau', 'http://fr.wikisource.org/wiki/Le_Dormeur_du_val', 'http://fr.wikisource.org/wiki/%C2%AB_Demain,_d%C3%A8s_l%E2%80%99aube,_%C3%A0_l%E2%80%99heure_o%C3%B9_blanchit_la_campagne_%C2%BB', 'http://fr.wikisource.org/wiki/%C2%AB_Mignonne,_allons_voir_si_la_rose_%C2%BB', 'http://fr.wikisource.org/wiki/Nuit_rh%C3%A9nane', 'http://fr.wikisource.org/wiki/Les_Fleurs_du_mal/1861/Une_charogne', 'http://fr.wikisource.org/wiki/Ballade_des_pendus', 'http://fr.wikisource.org/wiki/Le_Bateau_ivre/%C3%89dition_Vanier_1895', 'http://fr.wikisource.org/wiki/Les_Fleurs_du_mal/1861/L%E2%80%99Invitation_au_voyage', 'http://fr.wikisource.org/wiki/Vers_dor%C3%A9s_(Nerval)'];
+    var poemUrl = poemsUrl[Math.floor(Math.random()*poemsUrl.length)];
+    getPoem(poemUrl);
 };
 
 // Variable globale des rimes chargées

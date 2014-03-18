@@ -1,12 +1,18 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>PoetifyJS - GetRandomPoem</title>
+        <title>PoetifyJS - GetPoem</title>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         <script type="text/javascript" src="./poetify.js"></script>
     </head>
     <body>
         <div id="meta"></div>
-         <div id="poem"></div><div style="text-align: center;"><button id="getRandomPoem" onclick="getRandomPoem();">Poème au hasard</button></div>
+        <div id="poem"></div>
+        <div style="text-align: center;">
+            <form>
+                <input type="url" required name="poemUrl">
+                <input type="button" onclick="getPoem(this.form.poemUrl.value);" value="Charger le poème">
+            </form>
+        </div>
     </body>
 </html>

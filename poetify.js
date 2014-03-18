@@ -219,31 +219,45 @@ function rimify(s) {
     getRimes.fetch();
 }
 
-// Get Random Poem from Wikisource
-function getRandomPoem() {
+
+// Get Poem from Wikisource
+function getPoem(poemUrl) {
     var poemDIV = document.getElementById("poem"), request;
-    request = new XMLHttpRequest;
-    request.open('GET', './getRandomPoem.php', true);
-    document.body.style.cursor = "wait";
-    request.onreadystatechange = function() {
-        document.body.style.cursor = "default";
-        if (this.readyState === 4) {
-            if (this.status >= 200 && this.status < 400) {
-                var data = this.responseText;
-                data = data.replace(/Warning([^;]*){/, '{');
-                data = JSON.parse(data);
-                data.poeme = data.poeme.replace(/###/g, '\n');
-                data.poeme = data.poeme.replace(/\[[^;]*]/g, "");
-                var poeme = data.poeme.replace(/\r\n|\r|\n/g, "<br>");
-                document.getElementById("meta").innerHTML = '<h1><a href="' + data.url + '">' + data.titre + '</a></h1><br> de ' + data.auteur + '<br><br>';
-                poemDIV.innerHTML = poeme;
-            } else {
-                document.getElementById("meta").innerHTML = "Erreur lors de la récupération du poème. Réessayer.<br>";
+    if (poemUrl.indexOf("wikisource.org/wiki/") < 0) {
+        poemDIV.innerHTML = "<br>";
+        document.getElementById("meta").innerHTML = "Veuillez entrez une adresse Wikisource valide.<br>";
+    } else {
+        request = new XMLHttpRequest;
+        request.open('POST', './getPoem.php', true);
+        document.body.style.cursor = "wait";
+        request.onreadystatechange = function() {
+            document.body.style.cursor = "default";
+            if (this.readyState === 4) {
+                if (this.status >= 200 && this.status < 400) {
+                    var data = this.responseText;
+                    data = data.replace(/Warning([^;]*){/, '{');
+                    if (data == "Erreur") {
+                        poemDIV.innerHTML = "<br>";
+                        document.getElementById("meta").innerHTML = "Erreur lors de la récupération du poème. Réessayer.<br>";
+                    } else {
+                        data = JSON.parse(data);
+                        data.poeme = data.poeme.replace(/###/g, '\n');
+                        data.poeme = data.poeme.replace(/\[[^;]*]/g, "");
+                        data.titre = data.titre.replace(/\//g, " - ");
+                        var poeme = data.poeme.replace(/\r\n|\r|\n/g, "<br>");
+                        document.getElementById("meta").innerHTML = '<h1><a href="' + data.url + '">' + data.titre + '</a></h1><br><em> de ' + data.auteur + '</em><br><br>';
+                        poemDIV.innerHTML = poeme;
+                    }
+                } else {
+                    poemDIV.innerHTML = "<br>";
+                    document.getElementById("meta").innerHTML = "Erreur lors de la récupération du poème. Réessayer.<br>";
+                }
             }
         }
+        request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
+        request.send("poemUrl=" + poemUrl);
+        request = null;
     }
-    request.send();
-    request = null;
 }
 
 // Requête JSONP via l'API Yahoo
