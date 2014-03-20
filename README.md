@@ -69,11 +69,11 @@ En quelques clics, un poème peut donc radicalement changer de sens tout en rest
   - Utilise toutes les fonctions de la boîte à outils PoetifyJS
   - L’algorithme recherche les rimes du mot choisi et conserve la métrique
 
-**[Tester Paronyma]**
+**[Tester Panoryma]**
 
 [drime.a3nm.net]:http://drime.a3nm.net/
 [Lexique]:http://www.lexique.org/
 [Wikisource]:http://fr.wikisource.org/
 [cette page]: http://fr.wikipedia.org/wiki/Di%C3%A9r%C3%A8se
 [Louphole]: http://www.louphole.com
-[Tester Paronyma]: http://www.louphole.com/applications/paronyma    
+[Tester Panoryma]: http://www.louphole.com/applications/paronyma    
