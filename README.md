@@ -64,10 +64,10 @@ Exemples
 ### Panoryma
 
 **Panoryma est une application qui permet de modifier les mots d’un poème en les remplaçant par des paronymes, c’est-à-dire des mots à la sonorité proche, presque homonymes.**
-**En quelques clics, un poème peut donc radicalement changer de sens tout en restant étrangement familier.**
+En quelques clics, un poème peut donc radicalement changer de sens tout en restant étrangement familier.
 
-    - Utilise toutes les fonctions de la boîte à outils PoetifyJS
-    - L’algorithme recherche les rimes du mot choisi et conserve la métrique
+  - Utilise toutes les fonctions de la boîte à outils PoetifyJS
+  - L’algorithme recherche les rimes du mot choisi et conserve la métrique
 
 **[Tester Paronyma]**
 
