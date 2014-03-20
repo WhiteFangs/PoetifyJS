@@ -76,4 +76,4 @@ En quelques clics, un poème peut donc radicalement changer de sens tout en rest
 [Wikisource]:http://fr.wikisource.org/
 [cette page]: http://fr.wikipedia.org/wiki/Di%C3%A9r%C3%A8se
 [Louphole]: http://www.louphole.com
-[Tester Panoryma]: http://www.louphole.com/applications/paronyma    
+[Tester Panoryma]: http://www.louphole.com/applications/panoryma    
