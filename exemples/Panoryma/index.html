@@ -10,8 +10,10 @@
         <div id="poem"></div>
         <div style="text-align: center;">
             <form>
-                <input type="url" required name="poemUrl">
-                <input type="button" onclick="getPoem(this.form.poemUrl.value);" value="Charger le poème">
+                <table>
+                    <tr><td><input type="url" name="poemUrl" placeholder="Entrer un lien Wikisource"></td><td><textarea name="poemText"></textarea></td></tr>
+                    <tr><td><input type="button" onclick="getPoem(this.form.poemUrl.value);" value="Charger depuis Wikisource"></td><td><input type="button" onclick="getPoemText(this.form.poemText.value);" value="Charger le texte"></td></tr>
+                </table>
             </form>
         </div>
     </body>

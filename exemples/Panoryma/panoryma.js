@@ -232,7 +232,7 @@ function getPoem(poemUrl) {
     var poemDIV = document.getElementById("poem"), request;
     if (poemUrl.indexOf("fr.wikisource.org/wiki/") < 0) {
         poemDIV.innerHTML = "<br>";
-        document.getElementById("meta").innerHTML = "Veuillez entrez une adresse Wikisource valide.<br>";
+        document.getElementById("meta").innerHTML = "Veuillez entrer une adresse Wikisource valide.<br>";
     } else {
         request = new XMLHttpRequest;
         request.open('POST', '../../getPoem.php', true);
@@ -272,9 +272,21 @@ function getPoem(poemUrl) {
     }
 }
 
+function getPoemText(poemText) {
+    var poemDIV = document.getElementById("poem");
+    document.getElementById("meta").innerHTML = '';
+    parsePoemToHTML(poemText, poemDIV);
+    if (document.body.addEventListener) {
+        document.body.addEventListener('click', rimifyBinder, false);
+    }
+    else {
+        document.body.attachEvent('onclick', rimifyBinder); //pour IE
+    }
+}
+
 window.onload = function() {
     var poemsUrl = ['http://fr.wikisource.org/wiki/Les_Fleurs_du_mal/1861/L%E2%80%99Albatros', 'http://fr.wikisource.org/wiki/El_Desdichado', 'http://fr.wikisource.org/wiki/Mon_r%C3%AAve_familier', 'http://fr.wikisource.org/wiki/Le_Pont_Mirabeau', 'http://fr.wikisource.org/wiki/Le_Dormeur_du_val', 'http://fr.wikisource.org/wiki/%C2%AB_Demain,_d%C3%A8s_l%E2%80%99aube,_%C3%A0_l%E2%80%99heure_o%C3%B9_blanchit_la_campagne_%C2%BB', 'http://fr.wikisource.org/wiki/%C2%AB_Mignonne,_allons_voir_si_la_rose_%C2%BB', 'http://fr.wikisource.org/wiki/Nuit_rh%C3%A9nane', 'http://fr.wikisource.org/wiki/Ballade_des_pendus', 'http://fr.wikisource.org/wiki/Le_Bateau_ivre/%C3%89dition_Vanier_1895', 'http://fr.wikisource.org/wiki/Vers_dor%C3%A9s_(Nerval)'];
-    var poemUrl = poemsUrl[Math.floor(Math.random()*poemsUrl.length)];
+    var poemUrl = poemsUrl[Math.floor(Math.random() * poemsUrl.length)];
     getPoem(poemUrl);
 };
 
@@ -315,16 +327,16 @@ function rimifyBinder(e)
         }
         if (rimes == null) { // Si les rimes n'ont pas été chargées, on les charge et on les traite
             rimify(mot, function(rimesObj) {
-                traitementRimes(k, vers, mot, rimesObj.rimes, e, premot, rimesObj.isFem, true);
+                traitementRimes(k, vers, mot, rimesObj.rimes, e.target, premot, rimesObj.isFem, true);
             });
         } else { // Sinon on les traite
-            traitementRimes(k, vers, mot, rimes, e, premot, isFem, false);
+            traitementRimes(k, vers, mot, rimes, e.target, premot, isFem, false);
         }
     }
 }
 
 // Pour le mot donné, cherche la première rime appropriée, puis remplace dans le poème et actualise le tableau des rimes chargées
-function traitementRimes(k, vers, mot, rimes, e, premot, isFem, isNew) {
+function traitementRimes(k, vers, mot, rimes, node, premot, isFem, isNew) {
     var index = k, position;
     if (premot !== undefined) {
         position = vers.indexOf(premot);
@@ -358,18 +370,18 @@ function traitementRimes(k, vers, mot, rimes, e, premot, isFem, isNew) {
                 if (vers.charAt(position - 2) == '.' || vers.charAt(position - 2) == '!' || vers.charAt(position - 2) == '?' || vers.charAt(position - 2) == '…') {
                     premot = premot.charAt(0).toUpperCase() + premot.slice(1);
                 }
-                e.target.innerHTML = e.target.innerHTML.toLowerCase().replace(premot + "'", premotRime);
-                e.target.innerHTML = e.target.innerHTML.toLowerCase().replace(mot, rimes[k % rimes.length]);
+                node.innerHTML = node.innerHTML.toLowerCase().replace(premot + "'", premotRime);
+                node.innerHTML = node.innerHTML.toLowerCase().replace(mot, rimes[k % rimes.length]);
             } else {
                 var rime = rimes[k % rimes.length];
                 if (vers.charAt(position - 2) == '.' || vers.charAt(position - 2) == '!' || vers.charAt(position - 2) == '?' || vers.charAt(position - 2) == '…') {
                     rime = rimes[k % rimes.length].charAt(0).toUpperCase() + rimes[k % rimes.length].slice(1);
                 }
-                e.target.innerHTML = e.target.innerHTML.toLowerCase().replace(mot, rime);
+                node.innerHTML = node.innerHTML.toLowerCase().replace(mot, rime);
             }
-            var poeme = e.target.parentNode.parentNode.innerHTML;
+            var poeme = node.parentNode.parentNode.innerHTML;
             poeme = unparsePoemFromHTML(poeme);
-            parsePoemToHTML(poeme, e.target.parentNode.parentNode);
+            parsePoemToHTML(poeme, node.parentNode.parentNode);
             k = index + rimes.length;
         } else {
             k++;

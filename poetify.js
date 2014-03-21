@@ -225,7 +225,7 @@ function getPoem(poemUrl) {
     var poemDIV = document.getElementById("poem"), request;
     if (poemUrl.indexOf("wikisource.org/wiki/") < 0) {
         poemDIV.innerHTML = "<br>";
-        document.getElementById("meta").innerHTML = "Veuillez entrez une adresse Wikisource valide.<br>";
+        document.getElementById("meta").innerHTML = "Veuillez entrer une adresse Wikisource valide.<br>";
     } else {
         request = new XMLHttpRequest;
         request.open('POST', './getPoem.php', true);
