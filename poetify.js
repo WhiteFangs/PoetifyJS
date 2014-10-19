@@ -146,12 +146,7 @@ function elisioner(mots) {
 
 // Compte le nombre de syllabes des vers d'un poème en suivant les règles classiques d'élision
 function metrify(s) {
-    s = s.replace(/[\.,…\/#!$%\^&\*;\?:{}=\_`~()]/g, "");
-    s = s.replace(/[0-9]/g, '');
-    s = s.replace(/\s{2,}/g, " ");
-    s = s.replace(/œ/g, "oe");
-    s = s.replace(/æ/g, "ae");
-    s = s.replace(/\r\n|\r|\n/g, "<br>");
+    s = s.replace(/[\.,…\/#!$%\^&\*;\?:{}=\_`~()]/g, "").replace(/[0-9]/g, '').replace(/\s{2,}/g, " ").replace(/œ/g, "oe").replace(/æ/g, "ae").replace(/\r\n|\r|\n/g, "<br>");
     var vers = s.split("<br>");
     vers = vers.filter(function(v) {
         return v !== ''
@@ -195,7 +190,7 @@ function rimify(s) {
         return false;
     }
 
-    // Callback de la requête JSONP
+    // Callback de la requête
     var callback = function(response) {
         var data = response.query.results.json;
         var rimesArray = [];
@@ -213,10 +208,59 @@ function rimify(s) {
         return rimesArray;
     };
 
-    // Instantiation de la requête JSONP
-    var query = "select * from json where url =\"http://drime.a3nm.net/query?query=" + s + "&nsyl=&json=on\" ";
-    var getRimes = new YQLQuery(query, callback);
-    getRimes.fetch();
+    var dummyCallback = function(data) {
+        console.log("dummy callback " + data);
+    }
+
+    var rimes = getWordQuery(s, getRimesQuery(s, dummyCallback));
+}
+
+function getWordQuery(word, callback) {
+    word = word.replace(/[\.,…\/#!$%\^&\*;\?:{}=\_`~()]/g, "").replace(/[0-9]/g, '').replace(/\s{1,}/g, "").replace(/œ/g, "oe").replace(/æ/g, "ae");
+    word = word.toLowerCase();
+    var request;
+    request = new XMLHttpRequest;
+    request.open('POST', './getWord.php', true);
+    request.onreadystatechange = function() {
+        if (this.readyState === 4) {
+            if (this.status >= 200 && this.status < 400) {
+                var data = this.responseText;
+                data = JSON.parse(data);
+                console.log(data.properties[0]);
+                this.callback = callback || function() {
+                };
+                this.callback(data.properties[0]);
+            }
+        }
+    }
+    request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
+    request.send("word=" + word);
+    request = null;
+}
+
+function getRimesQuery(wordProp, callback) {
+    console.log(wordProp);
+    // TODO
+    // Check the longest common suffix in phonetic and in word and sort the results
+    var request, json = {phon_end: wordProp.phon_end, word_end: wordProp.word_end, min_nsyl: wordProp.min_nsyl, max_nsyl: wordProp.max_nsyl, elidable: wordProp.elidable};
+    request = new XMLHttpRequest;
+    request.open('POST', './getRimes.php', true);
+    request.onreadystatechange = function() {
+        if (this.readyState === 4) {
+            if (this.status >= 200 && this.status < 400) {
+                var data = this.responseText;
+                console.log(data);
+                data = JSON.parse(data);
+                console.log(data);
+                this.callback = callback || function() {
+                };
+                this.callback(data);
+            }
+        }
+    }
+    request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
+    request.send('phon_end='+wordProp.phon_end+'&word_end='+wordProp.word_end+'&min_nsyl='+ wordProp.min_nsyl+'&max_nsyl='+ wordProp.max_nsyl+'&elidable='+wordProp.elidable);
+    request = null;
 }
 
 
@@ -258,28 +302,4 @@ function getPoem(poemUrl) {
         request.send("poemUrl=" + poemUrl);
         request = null;
     }
-}
-
-// Requête JSONP via l'API Yahoo
-function YQLQuery(query, callback) {
-    this.query = query;
-    this.callback = callback || function() {
-    };
-    this.fetch = function() {
-
-        var scriptEl = document.createElement('script'),
-                uid = 'yql' + +new Date(),
-                encodedQuery = encodeURIComponent(this.query.toLowerCase()),
-                instance = this;
-
-        YQLQuery[uid] = function(json) {
-            instance.callback(json);
-            delete YQLQuery[uid];
-            document.body.removeChild(scriptEl);
-        };
-
-        scriptEl.src = 'http://query.yahooapis.com/v1/public/yql?q='
-                + encodedQuery + '&format=json&callback=YQLQuery.' + uid;
-        document.body.appendChild(scriptEl);
-    };
 }
