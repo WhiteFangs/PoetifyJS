@@ -17,20 +17,6 @@ try {
     exit;
 }
 
-/*
- * SELECT word, phon, freq, min_nsyl, max_nsyl, elidable, orig, feminine
-     FROM words
-     WHERE (phon_end = ? OR word_end = ?)
-     AND ((? OR max_nsyl >= ?)
-     AND (? OR min_nsyl <= ?
-     OR (elidable AND min_nsyl - 1 <= ? AND ?)))
-     ''';
-     args = (phon_end, word_end,
-     minsyll == None, minsyll, maxsyll == None, maxsyll, maxsyll, elide,);
- */
-
-$properties = array();
-
 $response = $bdd->query("SELECT * FROM words WHERE (phon_end = '".$phon_end."' OR word_end = '".$word_end."') AND ((max_nsyl >= '".$min_nsyl."') AND (min_nsyl <= '".$max_nsyl."' OR (elidable AND min_nsyl - 1 <= '".$max_nsyl."' AND '".$elidable."')))");
 
 $result = $response->fetchAll();
