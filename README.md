@@ -20,8 +20,8 @@ Fonctions
 
 **Fonction pour appliquer les règles d'élision à un tableau de mots**
 
-  - Gère l'élision du 'h' et l'élision en fin de vers (fin de tableau)
-  - Gère l'interdiction d'élision dans le cas de la répétition d'un même son *(ex: "Thésée excusable")*
+  - Gère l'élision en fin de vers (fin de tableau) 
+  - Gère l'élision du 'h' // A revoir et à améliorer
 
 ### Metrify
 
@@ -37,7 +37,19 @@ Fonctions
 
   - Les rimes ont le même nombre de syllabes que le mot donné
   - Les rimes ont la même nature que le mot donné
-  - Utilise l'API de [drime.a3nm.net] (base de données [Lexique])
+
+### GetWordQuery
+
+**Fonction exécutant une requête vers la base de données pour un mot
+
+  - Peut exécuter un callback avec les propriétés du mot récupérées
+
+### GetRimesQuery
+
+**Fonction exécutant une requête vers la base de données pour les rimes d'un mot donné
+
+  - Peut exécuter un callback avec le tableau de rimes obtenu
+  - Classe les rimes selon l'ordre suivant: rime sonore, rime de vue, fréquence, alphabétique
 
 ### GetPoem
 
@@ -49,8 +61,13 @@ Fonctions
 Utilisation
 ----
 
-**L'ensemble des fonctions Metrify + Elisioner + Syllabify a notamment été testé et validé sur les alexandrins de l'acte I du Phèdre de Racine**
-*(en omettant cependant les différences de règles sur les diérèses à l'époque, voir [cette page] pour plus de détails.)*
+### Base de données
+
+La base de données utilisée a été générée séparément à partir de l'application Drime ([drime.a3nm.net] basée sur [Lexique]).
+Le fichier drime.sql (~8 Mo) est fourni pour être importée directement.
+La base ne contient pas de noms propres, le résultat d'une requête GetWordQuery est donc nul pour celle-ci, à la différence de l'application Drime qui est capable de déterminer la prononciation de mots inconnus.
+Cette fonctionnalité pourra éventuellement être implémentée ultérieurement.
+
 
 PoetifyJS sera utilisé dans plusieurs applications à venir sur mon site [Louphole]
 
@@ -71,9 +88,8 @@ En quelques clics, un poème peut donc radicalement changer de sens tout en rest
 
 **[Tester Panoryma]**
 
+[Wikisource]:http://fr.wikisource.org/
 [drime.a3nm.net]:http://drime.a3nm.net/
 [Lexique]:http://www.lexique.org/
-[Wikisource]:http://fr.wikisource.org/
-[cette page]: http://fr.wikipedia.org/wiki/Di%C3%A9r%C3%A8se
 [Louphole]: http://www.louphole.com
 [Tester Panoryma]: http://www.louphole.com/applications/panoryma    
