@@ -40,13 +40,13 @@ Fonctions
 
 ### GetWordQuery
 
-**Fonction exécutant une requête vers la base de données pour un mot
+**Fonction exécutant une requête vers la base de données pour un mot**
 
   - Peut exécuter un callback avec les propriétés du mot récupérées
 
 ### GetRimesQuery
 
-**Fonction exécutant une requête vers la base de données pour les rimes d'un mot donné
+**Fonction exécutant une requête vers la base de données pour les rimes d'un mot donné**
 
   - Peut exécuter un callback avec le tableau de rimes obtenu
   - Classe les rimes selon l'ordre suivant: rime sonore, rime de vue, fréquence, alphabétique
@@ -64,7 +64,7 @@ Utilisation
 ### Base de données
 
 La base de données utilisée a été générée séparément à partir de l'application Drime ([drime.a3nm.net] basée sur [Lexique]).
-Le fichier drime.sql (~8 Mo) est fourni pour être importée directement.
+**Le fichier drime.sql (~8 Mo) est fourni pour être importée directement.**
 La base ne contient pas de noms propres, le résultat d'une requête GetWordQuery est donc nul pour celle-ci, à la différence de l'application Drime qui est capable de déterminer la prononciation de mots inconnus.
 Cette fonctionnalité pourra éventuellement être implémentée ultérieurement.
 
