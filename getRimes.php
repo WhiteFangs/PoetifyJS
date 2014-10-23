@@ -11,18 +11,18 @@ if (isset($_POST['phon_end']) && isset($_POST['word_end']) && isset($_POST['min_
 }
 
 try {
-    $bdd = new PDO('mysql:host='.$dbhost.';dbname='.$dbname, $dblogin, $dbpassword, array(PDO::ATTR_ERRMODE => PDO::ERRMODE_WARNING));
+    $bdd = new PDO('mysql:host=' . $dbhost . ';dbname=' . $dbname, $dblogin, $dbpassword, array(PDO::ATTR_ERRMODE => PDO::ERRMODE_WARNING));
+    $bdd->exec("SET CHARACTER SET utf8");
 } catch (PDOException $e) {
     echo 'Echec de la connexion : ' . $e->getMessage();
     exit;
 }
 
-$response = $bdd->query("SELECT * FROM words WHERE (phon_end = '".$phon_end."' OR word_end = '".$word_end."') AND ((max_nsyl >= '".$min_nsyl."') AND (min_nsyl <= '".$max_nsyl."' OR (elidable AND min_nsyl - 1 <= '".$max_nsyl."' AND '".$elidable."')))");
+$response = $bdd->query("SELECT * FROM words WHERE (phon_end = '" . $phon_end . "' OR word_end = '" . $word_end . "') AND ((max_nsyl >= '" . $min_nsyl . "') AND (min_nsyl <= '" . $max_nsyl . "' OR (elidable AND min_nsyl - 1 <= '" . $max_nsyl . "' AND '" . $elidable . "')))");
 
 $result = $response->fetchAll();
 
 $response->closeCursor();
 
 echo json_encode(array("rimes" => $result));
-
 ?>

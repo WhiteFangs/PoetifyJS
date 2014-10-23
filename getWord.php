@@ -8,11 +8,11 @@ if (isset($_POST['word'])) {
 
 try {
     $bdd = new PDO('mysql:host='.$dbhost.';dbname='.$dbname, $dblogin, $dbpassword, array(PDO::ATTR_ERRMODE => PDO::ERRMODE_WARNING));
+    $bdd->exec("SET CHARACTER SET utf8");
 } catch (PDOException $e) {
     echo 'Echec de la connexion : ' . $e->getMessage();
     exit;
 }
-
 $response = $bdd->query("SELECT * FROM words WHERE word = '".$word."' ORDER BY freq DESC");
 $result = $response->fetchAll();
 
