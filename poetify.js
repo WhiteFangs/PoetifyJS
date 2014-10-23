@@ -175,13 +175,7 @@ function rimify(s) {
     var syllabes = syllabify(s);
 
     // Parse la nature de la rime et compare à celle du mot
-    function natureEquals(rime, nature) {
-        var natureRime = rime.orig.replace(/ *\([^)]*\) */g, "").split(", ");
-        nature = nature.replace(/ *\([^)]*\) */g, "");
-        if (nature.trim() == "") {
-            return true;
-        }
-        nature = nature.split(", ");
+    function natureEquals(natureRime, nature) {
         for (var i = 0; i < natureRime.length; i++) {
             if (nature.indexOf(natureRime[i]) > -1) {
                 return true;
@@ -191,15 +185,14 @@ function rimify(s) {
     }
 
     // Callback de la requête
-    var callback = function(response) {
-        var data = response.query.results.json;
+    var callback = function(rhymes) {
         var rimesArray = [];
         var rime, syllabesRime;
-        if (data.result != null) {
-            for (var k = 0; k < data.result.length; k++) {
-                rime = data.result[k].word;
+        if (rhymes != null) {
+            for (var k = 0; k < rhymes.length; k++) {
+                rime = rhymes[k].word;
                 syllabesRime = syllabify(rime);
-                if (syllabesRime.nb == syllabes.nb && syllabesRime.max == syllabes.max && natureEquals(data.result[k], data.keys.json[2])) {
+                if (syllabesRime.nb == syllabes.nb && syllabesRime.max == syllabes.max && natureEquals(rhymes[k].orig, rhymes.keys.orig)) {
                     rimesArray.push(rime);
                 }
             }
@@ -208,13 +201,14 @@ function rimify(s) {
         return rimesArray;
     };
 
-    var dummyCallback = function(data) {
-        console.log("dummy callback " + data);
-    }
-
-    var rimes = getWordQuery(s, getRimesQuery(s, dummyCallback));
+    getWordQuery(s, function(wordProp) {
+        getRimesQuery(wordProp, function(rhymes) {
+            callback(rhymes);
+        })
+    });
 }
 
+// Récupère les données d'un mot dans la base de données et exécute le callback avec les propriétés du mot si besoin
 function getWordQuery(word, callback) {
     word = word.replace(/[\.,…\/#!$%\^&\*;\?:{}=\_`~()]/g, "").replace(/[0-9]/g, '').replace(/\s{1,}/g, "").replace(/œ/g, "oe").replace(/æ/g, "ae");
     word = word.toLowerCase();
@@ -226,7 +220,6 @@ function getWordQuery(word, callback) {
             if (this.status >= 200 && this.status < 400) {
                 var data = this.responseText;
                 data = JSON.parse(data);
-                console.log(data.properties[0]);
                 this.callback = callback || function() {
                 };
                 this.callback(data.properties[0]);
@@ -238,10 +231,42 @@ function getWordQuery(word, callback) {
     request = null;
 }
 
+// Récupère les rimes d'un mot à l'aide de ses propriétés et exécute le callback avec le tableau de rimes obtenu si besoin
 function getRimesQuery(wordProp, callback) {
-    console.log(wordProp);
-    // TODO
-    // Check the longest common suffix in phonetic and in word and sort the results
+    var word = wordProp.word, phon = wordProp.phon;
+
+    //Longest common suffix (phonetic and word)
+    function lcs(word, rhyme) {
+        var i = 0;
+        while (word.substring(word.length, word.length - i) == rhyme.substring(rhyme.length, rhyme.length - i)) {
+            i++;
+            if (i > word.length || i > rhyme.length) {
+                break;
+            }
+        }
+        return (i - 1);
+    }
+
+    // Fonction pour classer les rimes en fonction de leur propriétés key
+    function compareKeys(a, b) {
+        var props = ["phon_ryhme", "word_rhyme", "freq", "word"];
+        var i = 0, result = 0;
+        while (result === 0 && i < 4) {
+            var result = (a.key[props[i]] < b.key[props[i]]) ? -1 : (a.key[props[i]] > b.key[props[i]]) ? 1 : 0;
+            i++;
+        }
+        return result;
+    }
+
+    // Fonction pour parse l'origine des mots
+    function parseOrig(wordProp) {
+        var orig = wordProp.orig.split(","), result = [];
+        for (var i = 0; i < orig.length; i++) {
+            result[i] = orig[i].split("|")[0];
+        }
+        return result;
+    }
+
     var request, json = {phon_end: wordProp.phon_end, word_end: wordProp.word_end, min_nsyl: wordProp.min_nsyl, max_nsyl: wordProp.max_nsyl, elidable: wordProp.elidable};
     request = new XMLHttpRequest;
     request.open('POST', './getRimes.php', true);
@@ -249,17 +274,25 @@ function getRimesQuery(wordProp, callback) {
         if (this.readyState === 4) {
             if (this.status >= 200 && this.status < 400) {
                 var data = this.responseText;
-                console.log(data);
                 data = JSON.parse(data);
-                console.log(data);
+                var rhymes = data.rimes, k;
+                for (k = 0; k < rhymes.length; k++) {
+                    var word_rhyme = lcs(word, rhymes[k].word),
+                            phon_rhyme = lcs(phon, rhymes[k].phon);
+                    rhymes[k].key = {phon_rhyme: -phon_rhyme, word_rhyme: -word_rhyme, freq: -rhymes[k].freq, word: rhymes[k].word};
+                    rhymes[k].orig = parseOrig(rhymes[k]);
+                }
+                var orig = parseOrig(wordProp);
+                rhymes.keys = {word: word, phon: phon, orig: orig};
+                rhymes.sort(compareKeys);
                 this.callback = callback || function() {
                 };
-                this.callback(data);
+                this.callback(rhymes);
             }
         }
     }
     request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
-    request.send('phon_end='+wordProp.phon_end+'&word_end='+wordProp.word_end+'&min_nsyl='+ wordProp.min_nsyl+'&max_nsyl='+ wordProp.max_nsyl+'&elidable='+wordProp.elidable);
+    request.send('phon_end=' + wordProp.phon_end + '&word_end=' + wordProp.word_end + '&min_nsyl=' + wordProp.min_nsyl + '&max_nsyl=' + wordProp.max_nsyl + '&elidable=' + wordProp.elidable);
     request = null;
 }
 
