@@ -171,7 +171,7 @@ function metrify(s) {
 }
 
 // Récupère les rimes d'un mot ayant le même nombre de syllabes et la même nature (Verbe, nom, adjectif...)
-function rimify(s) {
+function rimify(s, gender) {
     var syllabes = syllabify(s);
 
     // Parse la nature de la rime et compare à celle du mot
@@ -202,7 +202,7 @@ function rimify(s) {
     };
 
     getWordQuery(s, function(wordProp) {
-        getRimesQuery(wordProp, function(rhymes) {
+        getRimesQuery(wordProp, gender, function(rhymes) {
             callback(rhymes);
         })
     });
@@ -220,9 +220,13 @@ function getWordQuery(word, callback) {
             if (this.status >= 200 && this.status < 400) {
                 var data = this.responseText;
                 data = JSON.parse(data);
-                this.callback = callback || function() {
-                };
-                this.callback(data.properties[0]);
+                if(data.properties.length != 0){
+                    this.callback = callback || function() {
+                    };
+                    this.callback(data.properties[0]);
+                }else{
+                    console.log("Word not found in the database")
+                }
             }
         }
     }
@@ -232,9 +236,8 @@ function getWordQuery(word, callback) {
 }
 
 // Récupère les rimes d'un mot à l'aide de ses propriétés et exécute le callback avec le tableau de rimes obtenu si besoin
-function getRimesQuery(wordProp, callback) {
-    var word = wordProp.word, phon = wordProp.phon;
-
+function getRimesQuery(wordProp, gender, callback) {
+    var word = wordProp.word, phon = wordProp.phon, feminine = wordProp.feminine;
     //Longest common suffix (phonetic and word)
     function lcs(word, rhyme) {
         var i = 0;
@@ -247,15 +250,22 @@ function getRimesQuery(wordProp, callback) {
         return (i - 1);
     }
 
-    // Fonction pour classer les rimes en fonction de leur propriétés key
-    function compareKeys(a, b) {
-        var props = ["phon_ryhme", "word_rhyme", "freq", "word"];
-        var i = 0, result = 0;
-        while (result === 0 && i < 4) {
-            var result = (a.key[props[i]] < b.key[props[i]]) ? -1 : (a.key[props[i]] > b.key[props[i]]) ? 1 : 0;
-            i++;
+    // Fonction pour classer les rimes en fonction de leur propriétés phon_rhyme, puis word_rhyme, puis freq
+    function sortRhymes(rhymes, phl, wdl) {
+        rhymes.sort(function(a,b){return a.key.phon_rhyme - b.key.phon_rhyme});
+        var rhymesArr = [];
+        for(var i = phl; i > -1; i--){
+            var tempArr = rhymes.filter(function(e){return e.key.phon_rhyme == -i});
+            tempArr.sort(function(a,b){return a.key.word_rhyme - b.key.word_rhyme});
+            var sort2 = [];
+            for(var j = wdl; j > -1; j--){
+                var tempArr2 = tempArr.filter(function(e){return e.key.word_rhyme == -j});
+                tempArr2.sort(function(a,b){return a.key.freq - b.key.freq});
+                sort2 = sort2.concat(tempArr2);
+            }
+            rhymesArr = rhymesArr.concat(sort2);
         }
-        return result;
+        return rhymesArr;
     }
 
     // Fonction pour parse l'origine des mots
@@ -277,14 +287,19 @@ function getRimesQuery(wordProp, callback) {
                 data = JSON.parse(data);
                 var rhymes = data.rimes, k;
                 for (k = 0; k < rhymes.length; k++) {
-                    var word_rhyme = lcs(word, rhymes[k].word),
-                            phon_rhyme = lcs(phon, rhymes[k].phon);
-                    rhymes[k].key = {phon_rhyme: -phon_rhyme, word_rhyme: -word_rhyme, freq: -rhymes[k].freq, word: rhymes[k].word};
-                    rhymes[k].orig = parseOrig(rhymes[k]);
+                    if((!gender || feminine == rhymes[k].feminine) && (word != rhymes[k].word)){
+                        var word_rhyme = lcs(word, rhymes[k].word),
+                                phon_rhyme = lcs(phon, rhymes[k].phon);
+                        rhymes[k].key = {phon_rhyme: -phon_rhyme, word_rhyme: -word_rhyme, freq: -rhymes[k].freq, word: rhymes[k].word};
+                        rhymes[k].orig = parseOrig(rhymes[k]);
+                    }else{
+                        rhymes.splice(k,1);
+                        k--;
+                    }
                 }
                 var orig = parseOrig(wordProp);
+                rhymes = sortRhymes(rhymes, phon.length, word.length);
                 rhymes.keys = {word: word, phon: phon, orig: orig};
-                rhymes.sort(compareKeys);
                 this.callback = callback || function() {
                 };
                 this.callback(rhymes);

@@ -37,6 +37,7 @@ Fonctions
 
   - Les rimes ont le même nombre de syllabes que le mot donné
   - Les rimes ont la même nature que le mot donné
+  - Peut filtrer les rimes selon le genre du mot donné
 
 ### GetWordQuery
 
@@ -49,7 +50,8 @@ Fonctions
 **Fonction exécutant une requête vers la base de données pour les rimes d'un mot donné**
 
   - Peut exécuter un callback avec le tableau de rimes obtenu
-  - Classe les rimes selon l'ordre suivant: rime sonore, rime de vue, fréquence, alphabétique
+  - Peut filtrer les rimes selon le genre du mot donné
+  - Classe les rimes selon l'ordre suivant: similarité phonétique, similarité graphique, fréquence
 
 ### GetPoem
 
