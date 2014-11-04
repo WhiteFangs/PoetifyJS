@@ -176,17 +176,11 @@ function metrify(s) {
 }
 
 // Récupère les rimes d'un mot ayant le même nombre de syllabes et la même nature (Verbe, nom, adjectif...)
-function rimify(s, traitement) {
+function rimify(s, gender, traitement) {
     var syllabes = syllabify(s), request;
 
     // Parse la nature de la rime et compare à celle du mot
-    function natureEquals(rime, nature) {
-        var natureRime = rime.orig.replace(/ *\([^)]*\) */g, "").split(", ");
-        nature = nature.replace(/ *\([^)]*\) */g, "");
-        if (nature.trim() == "") {
-            return true;
-        }
-        nature = nature.split(", ");
+    function natureEquals(natureRime, nature) {
         for (var i = 0; i < natureRime.length; i++) {
             if (nature.indexOf(natureRime[i]) > -1) {
                 return true;
@@ -195,22 +189,21 @@ function rimify(s, traitement) {
         return false;
     }
 
-    // Callback de la requête JSONP
-    var callback = function(response) {
-        var data = response.query.results.json;
+    // Callback de la requête
+    var callback = function(rhymes) {
         var rimesArray = [];
         var rime, syllabesRime;
-        if (data.result != null) {
-            for (var k = 0; k < data.result.length; k++) {
-                rime = data.result[k].word;
+        if (rhymes != null) {
+            for (var k = 0; k < rhymes.length; k++) {
+                rime = rhymes[k].word;
                 syllabesRime = syllabify(rime);
-                if (syllabesRime.nb == syllabes.nb && syllabesRime.max == syllabes.max && natureEquals(data.result[k], data.keys.json[2])) {
+                if (syllabesRime.nb == syllabes.nb && syllabesRime.max == syllabes.max && natureEquals(rhymes[k].orig, rhymes.keys.orig)) {
                     rimesArray.push(rime);
                 }
             }
         }
         if (rimesArray.length != 0) {
-            if (data.result[0].feminine == 1) {
+            if (rhymes[0].feminine == 1) {
                 return traitement({rimes: rimesArray, isFem: true});
             }
             return traitement({rimes: rimesArray, isFem: false});
@@ -221,10 +214,115 @@ function rimify(s, traitement) {
         }
     };
 
-    // Instantiation de la requête JSONP
-    var query = "select * from json where url =\"http://drime.a3nm.net/query?query=" + s + "&gender=on&nsyl=&json=on\" ";
-    var getRimes = new YQLQuery(query, callback);
-    getRimes.fetch();
+    getWordQuery(s, function(wordProp) {
+        getRimesQuery(wordProp, gender, function(rhymes) {
+            callback(rhymes);
+        })
+    });
+}
+
+// Récupère les données d'un mot dans la base de données et exécute le callback avec les propriétés du mot si besoin
+function getWordQuery(word, callback) {
+    word = word.replace(/[\.,…\/#!$%\^&\*;\?:{}=\_`~()]/g, "").replace(/[0-9]/g, '').replace(/\s{1,}/g, "").replace(/œ/g, "oe").replace(/æ/g, "ae");
+    word = word.toLowerCase();
+    var request;
+    request = new XMLHttpRequest;
+    request.open('POST', '../../getWord.php', true);
+    request.onreadystatechange = function() {
+        if (this.readyState === 4) {
+            if (this.status >= 200 && this.status < 400) {
+                var data = this.responseText;
+                data = JSON.parse(data);
+                if(data.properties.length != 0){
+                    this.callback = callback || function() {
+                    };
+                    this.callback(data.properties[0]);
+                }else{
+                    console.log("Word not found in the database")
+                }
+            }
+        }
+    }
+    request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
+    request.send("word=" + word);
+    request = null;
+}
+
+// Récupère les rimes d'un mot à l'aide de ses propriétés et exécute le callback avec le tableau de rimes obtenu si besoin
+function getRimesQuery(wordProp, gender, callback) {
+    var word = wordProp.word, phon = wordProp.phon, feminine = wordProp.feminine;
+    //Longest common suffix (phonetic and word)
+    function lcs(word, rhyme) {
+        var i = 0;
+        while (word.substring(word.length, word.length - i) == rhyme.substring(rhyme.length, rhyme.length - i)) {
+            i++;
+            if (i > word.length || i > rhyme.length) {
+                break;
+            }
+        }
+        return (i - 1);
+    }
+
+     // Fonction pour classer les rimes en fonction de leur propriétés phon_rhyme, puis word_rhyme, puis freq
+   function sortRhymes(rhymes, phl, wdl) {
+        rhymes.sort(function(a,b){return a.key.phon_rhyme - b.key.phon_rhyme});
+        var rhymesArr = [];
+        for(var i = phl; i > -1; i--){
+            var tempArr = rhymes.filter(function(e){return e.key.phon_rhyme == -i});
+            tempArr.sort(function(a,b){return a.key.word_rhyme - b.key.word_rhyme});
+            var sort2 = [];
+            for(var j = wdl; j > -1; j--){
+                var tempArr2 = tempArr.filter(function(e){return e.key.word_rhyme == -j});
+                tempArr2.sort(function(a,b){return a.key.freq - b.key.freq});
+                sort2 = sort2.concat(tempArr2);
+            }
+            rhymesArr = rhymesArr.concat(sort2);
+        }
+        return rhymesArr;
+    }
+
+    // Fonction pour parse l'origine des mots
+    function parseOrig(wordProp) {
+        var orig = wordProp.orig.split(","), result = [];
+        for (var i = 0; i < orig.length; i++) {
+            result[i] = orig[i].split("|")[0];
+        }
+        return result;
+    }
+
+    var request, json = {phon_end: wordProp.phon_end, word_end: wordProp.word_end, min_nsyl: wordProp.min_nsyl, max_nsyl: wordProp.max_nsyl, elidable: wordProp.elidable};
+    request = new XMLHttpRequest;
+    request.open('POST', '../../getRimes.php', true);
+    request.onreadystatechange = function() {
+        if (this.readyState === 4) {
+            if (this.status >= 200 && this.status < 400) {
+                var data = this.responseText;
+                data = JSON.parse(data);
+                var rhymes = data.rimes, k;
+                for (k = 0; k < rhymes.length; k++) {
+                    if((!gender || feminine == rhymes[k].feminine) && (word != rhymes[k].word)){
+                        var word_rhyme = lcs(word, rhymes[k].word),
+                                phon_rhyme = lcs(phon, rhymes[k].phon);
+                        rhymes[k].key = {phon_rhyme: -phon_rhyme, word_rhyme: -word_rhyme, freq: -rhymes[k].freq, word: rhymes[k].word};
+                        rhymes[k].orig = parseOrig(rhymes[k]);
+                    }else{
+                        rhymes.splice(k,1);
+                        k--;
+                    }
+                }
+                var orig = parseOrig(wordProp);
+                rhymes = sortRhymes(rhymes, phon.length, word.length);
+                rhymes.keys = {word: word, phon: phon, orig: orig};
+                rhymes.push(wordProp);
+                this.callback = callback || function() {
+                };
+                this.callback(rhymes);
+            }
+        }
+    }
+    request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
+    request.send('phon_end=' + wordProp.phon_end + '&word_end=' + wordProp.word_end + '&min_nsyl=' + wordProp.min_nsyl + '&max_nsyl=' + wordProp.max_nsyl + '&elidable=' + wordProp.elidable);
+    request = null;
 }
 
 // Get Poem from Wikisource
@@ -285,7 +383,18 @@ function getPoemText(poemText) {
 }
 
 window.onload = function() {
-    var poemsUrl = ['http://fr.wikisource.org/wiki/Les_Fleurs_du_mal/1861/L%E2%80%99Albatros', 'http://fr.wikisource.org/wiki/El_Desdichado', 'http://fr.wikisource.org/wiki/Mon_r%C3%AAve_familier', 'http://fr.wikisource.org/wiki/Le_Pont_Mirabeau', 'http://fr.wikisource.org/wiki/Le_Dormeur_du_val', 'http://fr.wikisource.org/wiki/%C2%AB_Demain,_d%C3%A8s_l%E2%80%99aube,_%C3%A0_l%E2%80%99heure_o%C3%B9_blanchit_la_campagne_%C2%BB', 'http://fr.wikisource.org/wiki/%C2%AB_Mignonne,_allons_voir_si_la_rose_%C2%BB', 'http://fr.wikisource.org/wiki/Nuit_rh%C3%A9nane', 'http://fr.wikisource.org/wiki/Ballade_des_pendus', 'http://fr.wikisource.org/wiki/Le_Bateau_ivre/%C3%89dition_Vanier_1895', 'http://fr.wikisource.org/wiki/Vers_dor%C3%A9s_(Nerval)'];
+    var poemsUrl = ['http://fr.wikisource.org/wiki/Les_Fleurs_du_mal/1861/L%E2%80%99Albatros',
+     'http://fr.wikisource.org/wiki/El_Desdichado', 
+     'http://fr.wikisource.org/wiki/Po%C3%A8mes_saturniens/Mon_r%C3%AAve_familier', 
+     'http://fr.wikisource.org/wiki/Le_Pont_Mirabeau', 
+     'http://fr.wikisource.org/wiki/Le_Dormeur_du_val', 
+     'http://fr.wikisource.org/wiki/%C2%AB_Demain,_d%C3%A8s_l%E2%80%99aube,_%C3%A0_l%E2%80%99heure_o%C3%B9_blanchit_la_campagne_%C2%BB', 
+     'http://fr.wikisource.org/wiki/%C2%AB_Mignonne,_allons_voir_si_la_rose_%C2%BB', 
+     'http://fr.wikisource.org/wiki/Nuit_rh%C3%A9nane', 
+     'http://fr.wikisource.org/wiki/Ballade_des_pendus', 
+     'http://fr.wikisource.org/wiki/Le_Bateau_ivre/%C3%89dition_Vanier_1895', 
+     'http://fr.wikisource.org/wiki/Vers_dor%C3%A9s_(Nerval)',
+     'http://fr.wikisource.org/wiki/%C2%AB_Quand_vous_serez_bien_vieille,_au_soir,_%C3%A0_la_chandelle_%C2%BB'];
     var poemUrl = poemsUrl[Math.floor(Math.random() * poemsUrl.length)];
     getPoem(poemUrl);
 };
@@ -326,7 +435,7 @@ function rimifyBinder(e)
             }
         }
         if (rimes == null) { // Si les rimes n'ont pas été chargées, on les charge et on les traite
-            rimify(mot, function(rimesObj) {
+            rimify(mot, true, function(rimesObj) {
                 traitementRimes(k, vers, mot, rimesObj.rimes, e.target, premot, rimesObj.isFem, true);
             });
         } else { // Sinon on les traite
@@ -443,30 +552,6 @@ function unparsePoemFromHTML(poeme) {
     poeme = replaceAll('<br>', '\n', poeme);
     poeme = replaceAll('<span class="vers">', '', poeme);
     return poeme;
-}
-
-// Requête JSONP via l'API Yahoo
-function YQLQuery(query, callback) {
-    this.query = query;
-    this.callback = callback || function() {
-    };
-    this.fetch = function() {
-
-        var scriptEl = document.createElement('script'),
-                uid = 'yql' + +new Date(),
-                encodedQuery = encodeURIComponent(this.query.toLowerCase()),
-                instance = this;
-
-        YQLQuery[uid] = function(json) {
-            instance.callback(json);
-            delete YQLQuery[uid];
-            document.body.removeChild(scriptEl);
-        };
-
-        scriptEl.src = 'http://query.yahooapis.com/v1/public/yql?q='
-                + encodedQuery + '&format=json&callback=YQLQuery.' + uid;
-        document.body.appendChild(scriptEl);
-    };
 }
 
 // Parse correctement un string en RegExp
