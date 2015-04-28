@@ -106,17 +106,6 @@ function elisioner(mots) {
     var elision = voyelles.concat(['h', 'H']);
     var syllabes, nb = 0, max = 0;
 
-    function sansAccents(s) {
-        var r = s.toLowerCase();
-        r = r.replace(/[àáâãäå]/g, "a");
-        r = r.replace(/[èéêë]/g, "e");
-        r = r.replace(/[ìíîï]/g, "i");
-        r = r.replace(/[òóôõö]/g, "o");
-        r = r.replace(/[ùúûü]/g, "u");
-        r = r.replace(/[ýÿ]/g, "y");
-        return r;
-    }
-
     for (var i = 0; i < mots.length; i++) {
         syllabes = syllabify(mots[i]);
         nb += syllabes.nb;
@@ -197,16 +186,16 @@ function rimify(s, gender, traitement) {
             for (var k = 0; k < rhymes.length; k++) {
                 rime = rhymes[k].word;
                 syllabesRime = syllabify(rime);
-                if (syllabesRime.nb == syllabes.nb && syllabesRime.max == syllabes.max && natureEquals(rhymes[k].orig, rhymes.keys.orig)) {
+                if (syllabesRime.nb == syllabes.nb && syllabesRime.max == syllabes.max && natureEquals(rhymes[k].nature, rhymes.rkeys.nature)) {
                     rimesArray.push(rime);
                 }
             }
         }
         if (rimesArray.length != 0) {
-            if (rhymes[0].feminine == 1) {
-                return traitement({rimes: rimesArray, isFem: true});
-            }
-            return traitement({rimes: rimesArray, isFem: false});
+			this.traitement = traitement || function(rimes) {
+				console.log(rimes);
+			};           
+            this.traitement({rimes: rimesArray, isFem: (rhymes[0].feminine == 1) ? true : false});
         } else {
             document.body.style.cursor = "default";
             window.motsArray = window.motsArray.concat({rime: s, rimes: [s], index: 0, isFem: false});
@@ -234,7 +223,8 @@ function getWordQuery(word, callback) {
                 var data = this.responseText;
                 data = JSON.parse(data);
                 if(data.properties.length != 0){
-                    this.callback = callback || function() {
+                    this.callback = callback || function(wordprop) {
+						console.log(wordprop);
                     };
                     this.callback(data.properties[0]);
                 }else{
@@ -281,15 +271,16 @@ function getRimesQuery(wordProp, gender, callback) {
         return rhymesArr;
     }
 
-    // Fonction pour parse l'origine des mots
-    function parseOrig(wordProp) {
-        var orig = wordProp.orig.split(","), result = [];
-        for (var i = 0; i < orig.length; i++) {
-            result[i] = orig[i].split("|")[0];
+    // Fonction pour parser la nature et l'origine des mots
+    function parseOrigine(wordProp, isNature) {
+		var idx = (isNature) ? 0 : 1;
+        var prop = wordProp.orig.split(","), result = [];
+        for (var i = 0; i < prop.length; i++) {
+            result[i] = prop[i].split("|")[idx];
         }
         return result;
     }
-
+	
     var request, json = {phon_end: wordProp.phon_end, word_end: wordProp.word_end, min_nsyl: wordProp.min_nsyl, max_nsyl: wordProp.max_nsyl, elidable: wordProp.elidable};
     request = new XMLHttpRequest;
     request.open('POST', '../../getRimes.php', true);
@@ -304,17 +295,23 @@ function getRimesQuery(wordProp, gender, callback) {
                         var word_rhyme = lcs(word, rhymes[k].word),
                                 phon_rhyme = lcs(phon, rhymes[k].phon);
                         rhymes[k].key = {phon_rhyme: -phon_rhyme, word_rhyme: -word_rhyme, freq: -rhymes[k].freq, word: rhymes[k].word};
-                        rhymes[k].orig = parseOrig(rhymes[k]);
+                        rhymes[k].nature = parseOrigine(rhymes[k], true);
+						rhymes[k].origine = parseOrigine(rhymes[k], false);
                     }else{
                         rhymes.splice(k,1);
                         k--;
                     }
                 }
-                var orig = parseOrig(wordProp);
+                var nature = parseOrigine(wordProp, true);
+				var origine = parseOrigine(wordProp, false);
                 rhymes = sortRhymes(rhymes, phon.length, word.length);
-                rhymes.keys = {word: word, phon: phon, orig: orig};
+				rhymes = uniqueOrigine(rhymes);
+                rhymes.rkeys = {word: word, phon: phon, nature: nature, origine: origine};
+				wordProp.nature = nature;
+				wordProp.origine = origine;
                 rhymes.push(wordProp);
-                this.callback = callback || function() {
+                this.callback = callback || function(rhymes) {
+					console.log(rhymes);
                 };
                 this.callback(rhymes);
             }
@@ -498,6 +495,29 @@ function traitementRimes(k, vers, mot, rimes, node, premot, isFem, isNew) {
     } while (k % rimes.length != index)
     document.body.style.cursor = "default";
     return window.motsArray;
+}
+
+function uniqueOrigine(rhymes){
+	var u = {}, uniqueRhymes = [];
+	for(var i = 0, l = rhymes.length; i < l; ++i){
+	  if(u.hasOwnProperty(rhymes[i].origine)) {
+		 continue;
+	  }
+	  uniqueRhymes.push(rhymes[i]);
+	  u[rhymes[i].origine] = 1;
+	}
+	return uniqueRhymes;
+}
+
+function sansAccents(s) {
+	var r = s.toLowerCase();
+	r = r.replace(/[àáâãäå]/g, "a");
+	r = r.replace(/[èéêë]/g, "e");
+	r = r.replace(/[ìíîï]/g, "i");
+	r = r.replace(/[òóôõö]/g, "o");
+	r = r.replace(/[ùúûü]/g, "u");
+	r = r.replace(/[ýÿ]/g, "y");
+	return r;
 }
 
 // Adapte le premot au genre du nouveau mot qui le suit (la nouvelle rime)
