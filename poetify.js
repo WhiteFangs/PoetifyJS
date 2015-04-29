@@ -1,6 +1,9 @@
 var poetify = function (){
+	
+	var self = this;
+	
 	// Comptage et découpage d'un mot en syllabes avec les possibilités de diérèses gérées par la variable max
-	function syllabify(s) {
+	self.syllabify = function (s) {
 		if (s.toLowerCase() == "pays") { // Exception pour ce mot ingérable autrement
 			return ({syllabes: ["pa", "ys"], nb: 2, max: 2});
 		}
@@ -101,19 +104,19 @@ var poetify = function (){
 	}
 
 	// Prend un tableau de mots en entrée. Pour chaque mot dans le tableau (vers), applique syllabify avec les règles d'élision du e
-	function elisioner(mots) {
+	self.elisioner = function (mots) {
 		var voyelles = ['a', 'A', 'á', 'Á', 'à', 'À', 'â', 'Â', 'e', 'E', 'é', 'É', 'è', 'È', 'ê', 'Ê', 'í', 'Í', 'o', 'ó', 'O', 'Ó', 'ô', 'Ô', 'ú', 'Ú', 'i', 'I', 'u', 'U', 'ü', 'Ü', 'û', 'Û', 'ï', 'Ï', 'î', 'Î'];
 		var elision = voyelles.concat(['h', 'H']);
 		var syllabes, nb = 0, max = 0;
 
 		for (var i = 0; i < mots.length; i++) {
-			syllabes = syllabify(mots[i]);
+			syllabes = self.syllabify(mots[i]);
 			nb += syllabes.nb;
 			max += syllabes.max;
 			if ((i > 0) &&
 					(mots[i - 1].toLowerCase().slice(-1) == 'e') &&
 					(elision.indexOf(mots[i].charAt(0)) > -1) &&
-					(sansAccents(mots[i - 1].toLowerCase().slice(-2, -1)) != sansAccents(mots[i].charAt(0)))) { // élision du e de fin dans le mot précédent si liaison (MAIS élision interdite si même son, ex: "Thésée excusable")
+					(self.sansAccents(mots[i - 1].toLowerCase().slice(-2, -1)) != self.sansAccents(mots[i].charAt(0)))) { // élision du e de fin dans le mot précédent si liaison (MAIS élision interdite si même son, ex: "Thésée excusable")
 				nb--;
 				if (!(['h', 'H'].indexOf(mots[i].charAt(0)) > -1)) {
 					max--;
@@ -134,7 +137,7 @@ var poetify = function (){
 	}
 
 	// Compte le nombre de syllabes des vers d'un poème en suivant les règles classiques d'élision
-	function metrify(s) {
+	self.metrify = function (s) {
 		s = s.replace(/[\.,…\/#!$%\^&\*;\?:{}=\_`~()]/g, "").replace(/[0-9]/g, '').replace(/\s{2,}/g, " ").replace(/œ/g, "oe").replace(/æ/g, "ae").replace(/\r\n|\r|\n/g, "<br>");
 		var vers = s.split("<br>");
 		vers = vers.filter(function(v) {
@@ -153,25 +156,15 @@ var poetify = function (){
 
 		// Appliquer elisioner au tableau de mots de chaque vers
 		for (var k = 0; k < mots.length; k++) {
-			nbsyllabes[k] = elisioner(mots[k]);
+			nbsyllabes[k] = self.elisioner(mots[k]);
 		}
 
 		return {vers: vers, mots: mots, nbsyllabes: nbsyllabes};
 	}
 
 	// Récupère les rimes d'un mot ayant le même nombre de syllabes et la même nature (Verbe, nom, adjectif...)
-	function rimify(s, gender) {
-		var syllabes = syllabify(s);
-
-		// Parse la nature de la rime et compare à celle du mot
-		function natureEquals(natureRime, nature) {
-			for (var i = 0; i < natureRime.length; i++) {
-				if (nature.indexOf(natureRime[i]) > -1) {
-					return true;
-				}
-			}
-			return false;
-		}
+	self.rimify = function (s, gender) {
+		var syllabes = self.syllabify(s);
 
 		// Callback de la requête
 		var callback = function(rhymes) {
@@ -180,8 +173,8 @@ var poetify = function (){
 			if (rhymes != null) {
 				for (var k = 0; k < rhymes.length; k++) {
 					rime = rhymes[k].word;
-					syllabesRime = syllabify(rime);
-					if (syllabesRime.nb == syllabes.nb && syllabesRime.max == syllabes.max && natureEquals(rhymes[k].nature, rhymes.rkeys.nature)) {
+					syllabesRime = self.syllabify(rime);
+					if (syllabesRime.nb == syllabes.nb && syllabesRime.max == syllabes.max && self.natureEquals(rhymes[k].nature, rhymes.rkeys.nature)) {
 						rimesArray.push(rime);
 					}
 				}
@@ -190,15 +183,15 @@ var poetify = function (){
 			return rimesArray;
 		};
 
-		getWordQuery(s, function(wordProp) {
-			getRimesQuery(wordProp, gender, function(rhymes) {
+		self.getWordQuery(s, function(wordProp) {
+			self.getRimesQuery(wordProp, gender, function(rhymes) {
 				callback(rhymes);
 			})
 		});
 	}
 
 	// Récupère les données d'un mot dans la base de données et exécute le callback avec les propriétés du mot si besoin
-	function getWordQuery(word, callback) {
+	self.getWordQuery = function (word, callback) {
 		word = word.replace(/[\.,…\/#!$%\^&\*;\?:{}=\_`~()]/g, "").replace(/[0-9]/g, '').replace(/\s{1,}/g, "").replace(/œ/g, "oe").replace(/æ/g, "ae");
 		word = word.toLowerCase();
 		var request;
@@ -226,47 +219,8 @@ var poetify = function (){
 	}
 
 	// Récupère les rimes d'un mot à l'aide de ses propriétés et exécute le callback avec le tableau de rimes obtenu si besoin
-	function getRimesQuery(wordProp, gender, callback) {
-		var word = wordProp.word, phon = wordProp.phon, feminine = wordProp.feminine;
-		//Longest common suffix (phonetic and word)
-		function lcs(word, rhyme) {
-			var i = 0;
-			while (word.substring(word.length, word.length - i) == rhyme.substring(rhyme.length, rhyme.length - i)) {
-				i++;
-				if (i > word.length || i > rhyme.length) {
-					break;
-				}
-			}
-			return (i - 1);
-		}
-
-		// Fonction pour classer les rimes en fonction de leur propriétés phon_rhyme, puis word_rhyme, puis freq
-		function sortRhymes(rhymes, phl, wdl) {
-			rhymes.sort(function(a,b){return a.key.phon_rhyme - b.key.phon_rhyme});
-			var rhymesArr = [];
-			for(var i = phl; i > -1; i--){
-				var tempArr = rhymes.filter(function(e){return e.key.phon_rhyme == -i});
-				tempArr.sort(function(a,b){return a.key.word_rhyme - b.key.word_rhyme});
-				var sort2 = [];
-				for(var j = wdl; j > -1; j--){
-					var tempArr2 = tempArr.filter(function(e){return e.key.word_rhyme == -j});
-					tempArr2.sort(function(a,b){return a.key.freq - b.key.freq});
-					sort2 = sort2.concat(tempArr2);
-				}
-				rhymesArr = rhymesArr.concat(sort2);
-			}
-			return rhymesArr;
-		}
-
-		// Fonction pour parser la nature et l'origine des mots
-		function parseOrigine(wordProp, isNature) {
-			var idx = (isNature) ? 0 : 1;
-			var prop = wordProp.orig.split(","), result = [];
-			for (var i = 0; i < prop.length; i++) {
-				result[i] = prop[i].split("|")[idx];
-			}
-			return result;
-		}
+	self.getRimesQuery = function (wordProp, gender, callback) {
+		var word = wordProp.word, phon = wordProp.phon, feminine = wordProp.feminine;		
 
 		var request, json = {phon_end: wordProp.phon_end, word_end: wordProp.word_end, min_nsyl: wordProp.min_nsyl, max_nsyl: wordProp.max_nsyl, elidable: wordProp.elidable};
 		request = new XMLHttpRequest;
@@ -279,19 +233,19 @@ var poetify = function (){
 					var rhymes = data.rimes, k;
 					for (k = 0; k < rhymes.length; k++) {
 						if((!gender || feminine == rhymes[k].feminine) && (word != rhymes[k].word)){
-							var word_rhyme = lcs(word, rhymes[k].word),
-									phon_rhyme = lcs(phon, rhymes[k].phon);
+							var word_rhyme = self.lcs(word, rhymes[k].word),
+									phon_rhyme = self.lcs(phon, rhymes[k].phon);
 							rhymes[k].key = {phon_rhyme: -phon_rhyme, word_rhyme: -word_rhyme, freq: -rhymes[k].freq, word: rhymes[k].word};
 							rhymes[k].orig = parseOrig(rhymes[k]);
-							rhymes[k].nature = parseOrigine(rhymes[k], true);
-							rhymes[k].origine = parseOrigine(rhymes[k], false);
+							rhymes[k].nature = self.parseOrigine(rhymes[k], true);
+							rhymes[k].origine = self.parseOrigine(rhymes[k], false);
 						}else{
 							rhymes.splice(k,1);
 							k--;
 						}
 					}
-					var nature = parseOrigine(wordProp, true);
-					rhymes = sortRhymes(rhymes, phon.length, word.length);
+					var nature = self.parseOrigine(wordProp, true);
+					rhymes = self.sortRhymes(rhymes, phon.length, word.length);
 					rhymes.rkeys = {word: word, phon: phon, nature: nature, origine: origine};
 					this.callback = callback || function(rhymes) {
 						console.log(rhymes);
@@ -307,7 +261,7 @@ var poetify = function (){
 
 
 	// Get Poem from Wikisource
-	function getPoem(poemUrl) {
+	self.getPoem = function (poemUrl) {
 		var poemDIV = document.getElementById("poem"), request;
 		if (poemUrl.indexOf("wikisource.org/wiki/") < 0) {
 			poemDIV.innerHTML = "<br>";
@@ -346,19 +300,78 @@ var poetify = function (){
 		}
 	}
 
-	function uniqueOrigine(rhymes){
-		var u = {}, uniqueRhymes = [];
+	// Parse la nature de la rime et compare à celle du mot
+	self.natureEquals = function (natureRime, nature) {
+		for (var i = 0; i < natureRime.length; i++) {
+			if (nature.indexOf(natureRime[i]) > -1) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	//Longest common suffix (phonetic and word)
+	self.lcs = function (word, rhyme) {
+		var i = 0;
+		while (word.substring(word.length, word.length - i) == rhyme.substring(rhyme.length, rhyme.length - i)) {
+			i++;
+			if (i > word.length || i > rhyme.length) {
+				break;
+			}
+		}
+		return (i - 1);
+	}
+	
+	// Fonction pour parser la nature et l'origine des mots
+	self.parseOrigine = function (wordProp, isNature) {
+		var idx = (isNature) ? 0 : 1;
+		var prop = wordProp.orig.split(","), result = [];
+		for (var i = 0; i < prop.length; i++) {
+			result[i] = prop[i].split("|")[idx];
+		}
+		return result;
+	}
+	
+	// Fonction pour classer les rimes en fonction de leur propriétés phon_rhyme, puis word_rhyme, puis freq
+	self.sortRhymes = function (rhymes, phl, wdl) {
+		rhymes.sort(function(a,b){return a.key.phon_rhyme - b.key.phon_rhyme});
+		var rhymesArr = [];
+		for(var i = phl; i > -1; i--){
+			var tempArr = rhymes.filter(function(e){return e.key.phon_rhyme == -i});
+			tempArr.sort(function(a,b){return a.key.word_rhyme - b.key.word_rhyme});
+			var sort2 = [];
+			for(var j = wdl; j > -1; j--){
+				var tempArr2 = tempArr.filter(function(e){return e.key.word_rhyme == -j});
+				tempArr2.sort(function(a,b){return a.key.freq - b.key.freq});
+				sort2 = sort2.concat(tempArr2);
+			}
+			rhymesArr = rhymesArr.concat(sort2);
+		}
+		return rhymesArr;
+	}
+	
+	self.uniqueOrigine = function (rhymes, origine){
+		var u = {}, uniqueRhymes = [], addRhyme = false;
+		for(var j = 0; j < origine.length; j++){
+			u[origine[j]] = 1;
+		}
 		for(var i = 0, l = rhymes.length; i < l; ++i){
-		  if(u.hasOwnProperty(rhymes[i].origine)) {
-			 continue;
-		  }
-		  uniqueRhymes.push(rhymes[i]);
-		  u[rhymes[i].origine] = 1;
+			for(var k = 0; k < rhymes[i].origine.length; k++){		
+				if(u.hasOwnProperty(rhymes[i].origine[k])) {
+				 continue;
+				}else{
+					u[rhymes[i].origine[k]] = 1;
+					addRhyme = true;
+				}
+			}
+			if(addRhyme)
+				uniqueRhymes.push(rhymes[i]);
+			addRhyme = false;
 		}
 		return uniqueRhymes;
 	}
 
-	function sansAccents(s) {
+	self.sansAccents = function (s) {
 		var r = s.toLowerCase();
 		r = r.replace(/[àáâãäå]/g, "a");
 		r = r.replace(/[èéêë]/g, "e");
@@ -368,4 +381,6 @@ var poetify = function (){
 		r = r.replace(/[ýÿ]/g, "y");
 		return r;
 	}
+	
+	return self;
 };

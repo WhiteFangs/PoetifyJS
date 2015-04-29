@@ -305,7 +305,7 @@ function getRimesQuery(wordProp, gender, callback) {
                 var nature = parseOrigine(wordProp, true);
 				var origine = parseOrigine(wordProp, false);
                 rhymes = sortRhymes(rhymes, phon.length, word.length);
-				rhymes = uniqueOrigine(rhymes);
+				rhymes = uniqueOrigine(rhymes, origine);
                 rhymes.rkeys = {word: word, phon: phon, nature: nature, origine: origine};
 				wordProp.nature = nature;
 				wordProp.origine = origine;
@@ -497,8 +497,9 @@ function traitementRimes(k, vers, mot, rimes, node, premot, isFem, isNew) {
     return window.motsArray;
 }
 
-function uniqueOrigine(rhymes){
+function uniqueOrigine(rhymes, origine){
 	var u = {}, uniqueRhymes = [];
+	u[origine] = 1;
 	for(var i = 0, l = rhymes.length; i < l; ++i){
 	  if(u.hasOwnProperty(rhymes[i].origine)) {
 		 continue;
