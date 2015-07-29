@@ -18,7 +18,7 @@ try {
     exit;
 }
 
-$response = $bdd->query("SELECT * FROM words WHERE (phon_end = '" . $phon_end . "') AND ((max_nsyl >= '" . $min_nsyl . "') AND (min_nsyl <= '" . $max_nsyl . "' OR (elidable AND min_nsyl - 1 <= '" . $max_nsyl . "' AND '" . $elidable . "'))) LIMIT 500");
+$response = $bdd->query("SELECT * FROM words WHERE (phon_end = '" . $phon_end . "') AND ((max_nsyl >= '" . $min_nsyl . "') AND (min_nsyl <= '" . $max_nsyl . "' OR (elidable AND min_nsyl - 1 <= '" . $max_nsyl . "' AND '" . $elidable . "'))) /* ORDER BY RAND() LIMIT 500*/");
 
 $result = $response->fetchAll();
 
