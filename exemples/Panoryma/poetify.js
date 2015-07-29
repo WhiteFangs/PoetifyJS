@@ -163,7 +163,7 @@ self.metrify = function (s) {
 };
 
 // Récupère les rimes d'un mot ayant le même nombre de syllabes et la même nature (Verbe, nom, adjectif...)
-self.rimify = function (s, gender, addWord, callback) {
+self.rimify = function (s, gender, addWord, success, error) {
 	var syllabes = self.syllabify(s);
 	self.getWordQuery(s, function(wordProp) {
 		self.getRimesQuery(wordProp, gender, function(rhymes) {
@@ -180,34 +180,42 @@ self.rimify = function (s, gender, addWord, callback) {
 			}
 			if(addWord)
 				rimesArray.push(rhymes.rkeys.word);
-			this.callback = callback || function(rimesArray) {
+			this.success = success || function(rimesArray) {
 				console.log(rimesArray);
 				return rimesArray;
 			};
-			this.callback({rimes: rimesArray, isFem: (rhymes[0].feminine == 1) ? true : false});
-		});
-	});
+			this.success({rimes: rimesArray, isFem: (rhymes[0].feminine == 1) ? true : false});
+		}, error);
+	}, error);
 };
 
 // Récupère les données d'un mot dans la base de données et exécute le callback avec les propriétés du mot si besoin
-self.getWordQuery = function (word, callback) {
+self.getWordQuery = function (word, success, error) {
 	word = word.replace(/[\.,…\/#!$%\^&\*;\?:{}=\_`~()]/g, "").replace(/[0-9]/g, '').replace(/\s{1,}/g, "").replace(/œ/g, "oe").replace(/æ/g, "ae");
 	word = word.toLowerCase();
 	self.ajaxRequest('POST', 'getWord.php', "word=" + word, function(data) {
 		data = JSON.parse(data);
 		if(data.properties.length !== 0){
-			this.callback = callback || function(wordprop) {
+			this.success = success || function(wordprop) {
 				console.log(wordprop);
 			};
-			this.callback(data.properties[0]);
+			this.success(data.properties[0]);
 		}else{
-			console.log("Word not found in the database");
+			this.error = error || function() {
+				console.log("Word not found in the database");
+			};
+			this.error();
 		}
+	}, function () {
+		this.error = error || function() {
+			console.log("An error happened in getWordQuery");
+		};
+		this.error();
 	});
 };
 
 // Récupère les rimes d'un mot à l'aide de ses propriétés et exécute le callback avec le tableau de rimes obtenu si besoin
-self.getRimesQuery = function (wordProp, gender, callback) {
+self.getRimesQuery = function (wordProp, gender, success, error) {
 	var word = wordProp.word, phon = wordProp.phon, feminine = wordProp.feminine,
 	json = {phon_end: wordProp.phon_end, word_end: wordProp.word_end, min_nsyl: wordProp.min_nsyl, max_nsyl: wordProp.max_nsyl, elidable: wordProp.elidable},
 	sendContent = 'phon_end=' + wordProp.phon_end + '&word_end=' + wordProp.word_end + '&min_nsyl=' + wordProp.min_nsyl + '&max_nsyl=' + wordProp.max_nsyl + '&elidable=' + wordProp.elidable;
@@ -232,10 +240,15 @@ self.getRimesQuery = function (wordProp, gender, callback) {
 		wordProp.nature = nature;
 		wordProp.origine = origine;
 		rhymes.rkeys = {word: word, phon: phon, nature: nature, origine: origine, wordObject : wordProp};
-		this.callback = callback || function(rhymes) {
+		this.success = success || function(rhymes) {
 			console.log(rhymes);
 		};
-		this.callback(rhymes);
+		this.success(rhymes);
+	}, function () {
+		this.error = error || function() {
+			console.log("An error happened in getRimesQuery");
+		};
+		this.error();
 	});
 };
 
