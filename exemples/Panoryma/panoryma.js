@@ -17,6 +17,55 @@ window.onload = function() {
   getPanorymaPoem(poemUrl);
 };
 
+function autoRandomizer(counter){
+  document.getElementById("autoRandomizer").value = "Transformation en cours...";
+  document.getElementById("autoRandomizer").disabled = true;
+  var mots = document.getElementsByClassName("mot1");
+  mots = [].slice.call(mots);
+  mots = mots.filter(function (a) {return a.innerText.length > 4;});
+  if(counter < mots.length && counter < 80){
+    mots[counter].click();
+    var currentMotsArray = poet.motsArray;
+    waiter(currentMotsArray, counter, 0);
+  }else{
+    document.getElementById("autoRandomizer").value = "Je suis paresseux, je préfère qu'un automate clique partout pour moi !";
+    document.getElementById("autoRandomizer").disabled = false;
+    poet.charged = true;
+  }
+}
+
+function waiter(currentMotsArray, counter, looping){
+  if(poet.charged !== true && poet.motsArray.equals(currentMotsArray) && looping < 10){
+    setTimeout(function (){waiter(currentMotsArray, counter, ++looping);}, 50);
+  }else{
+    autoRandomizer(++counter);
+  }
+}
+
+Array.prototype.equals = function (array) {
+    // if the other array is a falsy value, return
+    if (!array)
+        return false;
+
+    // compare lengths - can save a lot of time
+    if (this.length != array.length)
+        return false;
+
+    for (var i = 0, l=this.length; i < l; i++) {
+        // Check if we have nested arrays
+        if (this[i] instanceof Array && array[i] instanceof Array) {
+            // recurse into the nested arrays
+            if (!this[i].equals(array[i]))
+                return false;
+        }
+        else if (this[i] != array[i]) {
+            // Warning - two different object instances will never be equal: {x:20} != {x:20}
+            return false;
+        }
+    }
+    return true;
+};
+
 function getPanorymaPoem(poemUrl){
   poet.getPoem(poemUrl);
   if (document.body.addEventListener) {

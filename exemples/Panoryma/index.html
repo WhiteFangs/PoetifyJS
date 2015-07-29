@@ -7,12 +7,13 @@
         <script type="text/javascript" src="./panoryma.js"></script>
     </head>
     <body>
+      <input type="button" id="autoRandomizer" onclick="autoRandomizer(0);" value="Je suis paresseux, je préfère qu'un automate clique partout pour moi !">
         <div id="meta"></div>
         <div id="poem"></div>
         <div style="text-align: center;">
             <form>
                 <table>
-                    <tr><td><input type="url" name="poemUrl" placeholder="Entrer un lien Wikisource"></td><td><textarea name="poemText"></textarea></td></tr>
+                    <tr><td><input type="url" name="poemUrl" placeholder="Lien Wikisource"></td><td><textarea name="poemText"></textarea></td></tr>
                     <tr><td><input type="button" onclick="getPanorymaPoem(this.form.poemUrl.value);" value="Charger depuis Wikisource"></td><td><input type="button" onclick="getPoemText(this.form.poemText.value);" value="Charger le texte"></td></tr>
                 </table>
             </form>
