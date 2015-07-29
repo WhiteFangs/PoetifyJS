@@ -44,6 +44,7 @@ function rimifyBinder(e)
       premot = mot.split("’")[0];
       mot = mot.split("’")[1];
     }
+    var capitalize = mot.charAt(0) === mot.charAt(0).toUpperCase();
     mot = mot.toLowerCase();
     vers = vers.toLowerCase();
     var rimes, k = 0, isFem;
@@ -62,24 +63,26 @@ function rimifyBinder(e)
     if (rimes === undefined) { // Si les rimes n'ont pas été chargées, on les charge et on les traite
     poet.rimify(mot, true, true, function(rimesObj) {
       if (rimesObj.rimes.length !== 0) {
-        traitementRimes(k, vers, mot, rimesObj.rimes, e.target, premot, rimesObj.isFem, true);
+        traitementRimes(k, vers, mot, rimesObj.rimes, e.target, premot, rimesObj.isFem, true, capitalize);
       }else{
         document.body.style.cursor = "default";
         poet.motsArray = poet.motsArray.concat({rime: mot, rimes: [mot], index: 0, isFem: false});
         return false;
       }
+    }, function(){
+      document.body.style.cursor = "default";
     });
   } else { // Sinon on les traite
-    traitementRimes(k, vers, mot, rimes, e.target, premot, isFem, false);
+    traitementRimes(k, vers, mot, rimes, e.target, premot, isFem, false, capitalize);
   }
 }
 }
 
 // Pour le mot donné, cherche la première rime appropriée, puis remplace dans le poème et actualise le tableau des rimes chargées
-function traitementRimes(k, vers, mot, rimes, node, premot, isFem, isNew) {
+function traitementRimes(k, vers, mot, rimes, node, premot, isFem, isNew, isCapitalized) {
   var index = k, position;
   if (premot !== undefined) {
-    position = vers.indexOf(premot);
+    position = vers.indexOf(premot + "’" + mot);
   } else {
     position = vers.indexOf(mot);
   }
@@ -106,21 +109,16 @@ function traitementRimes(k, vers, mot, rimes, node, premot, isFem, isNew) {
           }
         }
       }
+      var rime = rimes[k % rimes.length];
       if (premot !== undefined) {
         if (vers.charAt(position - 2) == '.' || vers.charAt(position - 2) == '!' || vers.charAt(position - 2) == '?' || vers.charAt(position - 2) == '…') {
           premot = premot.charAt(0).toUpperCase() + premot.slice(1);
         }
         node.innerHTML = node.innerHTML.toLowerCase().replace(premot + "'", premotRime);
-        node.innerHTML = node.innerHTML.toLowerCase().replace(mot, rimes[k % rimes.length]);
-      } else {
-        var rime = rimes[k % rimes.length];
-        if (vers.charAt(position - 2) == '.' || vers.charAt(position - 2) == '!' || vers.charAt(position - 2) == '?' || vers.charAt(position - 2) == '…') {
-          rime = rimes[k % rimes.length].charAt(0).toUpperCase() + rimes[k % rimes.length].slice(1);
-        }
-        if(mot.charAt(0) === mot.charAt(0).toUpperCase())
-          rime = rime.capitalizeFirstLetter();
-        node.innerHTML = node.innerHTML.toLowerCase().replace(mot, rime);
+      } else if (vers.charAt(position - 2) == '.' || vers.charAt(position - 2) == '!' || vers.charAt(position - 2) == '?' || vers.charAt(position - 2) == '…') {
+        rime = rimes[k % rimes.length].charAt(0).toUpperCase() + rimes[k % rimes.length].slice(1);
       }
+      node.innerHTML = node.innerHTML.toLowerCase().replace(mot, isCapitalized ? rime.capitalizeFirstLetter() : rime);
       var poeme = node.parentNode.parentNode.innerHTML;
       poeme = poet.unparsePoemFromHTML(poeme);
       poet.parsePoemToHTML(poeme, node.parentNode.parentNode);
