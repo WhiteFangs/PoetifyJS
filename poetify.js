@@ -1,4 +1,4 @@
-var poetify = function (){
+var poetify = function (phpDirectory){
 
 	var self = this;
 
@@ -163,29 +163,28 @@ self.metrify = function (s) {
 };
 
 // Récupère les rimes d'un mot ayant le même nombre de syllabes et la même nature (Verbe, nom, adjectif...)
-self.rimify = function (s, gender) {
+self.rimify = function (s, gender, addWord, callback) {
 	var syllabes = self.syllabify(s);
-
-	// Callback de la requête
-	var callback = function(rhymes) {
-		var rimesArray = [];
-		var rime, syllabesRime;
-		if (rhymes !== null) {
-			for (var k = 0; k < rhymes.length; k++) {
-				rime = rhymes[k].word;
-				syllabesRime = self.syllabify(rime);
-				if (syllabesRime.nb == syllabes.nb && syllabesRime.max == syllabes.max && self.natureEquals(rhymes[k].nature, rhymes.rkeys.nature)) {
-					rimesArray.push(rime);
-				}
-			}
-		}
-		console.log(rimesArray);
-		return rimesArray;
-	};
-
 	self.getWordQuery(s, function(wordProp) {
 		self.getRimesQuery(wordProp, gender, function(rhymes) {
-			callback(rhymes);
+			var rimesArray = [];
+			var rime, syllabesRime;
+			if (rhymes !== null) {
+				for (var k = 0; k < rhymes.length; k++) {
+					rime = rhymes[k].word;
+					syllabesRime = self.syllabify(rime);
+					if (syllabesRime.nb == syllabes.nb && syllabesRime.max == syllabes.max && self.natureEquals(rhymes[k].nature, rhymes.rkeys.nature)) {
+						rimesArray.push(rime);
+					}
+				}
+			}
+			if(addWord)
+			rimesArray.push(rhymes.rkeys.wordProp);
+			this.callback = callback || function(rimesArray) {
+				console.log(rimesArray);
+				return rimesArray;
+			};
+			this.callback({rimes: rimesArray, isFem: (rhymes[0].feminine == 1) ? true : false});
 		});
 	});
 };
@@ -194,7 +193,7 @@ self.rimify = function (s, gender) {
 self.getWordQuery = function (word, callback) {
 	word = word.replace(/[\.,…\/#!$%\^&\*;\?:{}=\_`~()]/g, "").replace(/[0-9]/g, '').replace(/\s{1,}/g, "").replace(/œ/g, "oe").replace(/æ/g, "ae");
 	word = word.toLowerCase();
-	self.ajaxRequest('POST', './getWord.php', "word=" + word, function(data) {
+	self.ajaxRequest('POST', 'getWord.php', "word=" + word, function(data) {
 		data = JSON.parse(data);
 		if(data.properties.length !== 0){
 			this.callback = callback || function(wordprop) {
@@ -212,7 +211,7 @@ self.getRimesQuery = function (wordProp, gender, callback) {
 	var word = wordProp.word, phon = wordProp.phon, feminine = wordProp.feminine,
 	json = {phon_end: wordProp.phon_end, word_end: wordProp.word_end, min_nsyl: wordProp.min_nsyl, max_nsyl: wordProp.max_nsyl, elidable: wordProp.elidable},
 	sendContent = 'phon_end=' + wordProp.phon_end + '&word_end=' + wordProp.word_end + '&min_nsyl=' + wordProp.min_nsyl + '&max_nsyl=' + wordProp.max_nsyl + '&elidable=' + wordProp.elidable;
-	self.ajaxRequest('POST', './getRimes.php', sendContent, function(data) {
+	self.ajaxRequest('POST', 'getRimes.php', sendContent, function(data) {
 		data = JSON.parse(data);
 		var rhymes = data.rimes, k;
 		for (k = 0; k < rhymes.length; k++) {
@@ -230,7 +229,9 @@ self.getRimesQuery = function (wordProp, gender, callback) {
 		var nature = self.parseOrigine(wordProp, true);
 		var origine = self.parseOrigine(wordProp, false);
 		rhymes = self.sortRhymes(rhymes, phon.length, word.length);
-		rhymes.rkeys = {word: word, phon: phon, nature: nature, origine: origine};
+		wordProp.nature = nature;
+		wordProp.origine = origine;
+		rhymes.rkeys = {word: word, phon: phon, nature: nature, origine: origine, wordObject : wordProp};
 		this.callback = callback || function(rhymes) {
 			console.log(rhymes);
 		};
@@ -247,7 +248,7 @@ self.getPoem = function (poemUrl) {
 		document.getElementById("meta").innerHTML = "Veuillez entrer une adresse Wikisource valide.<br>";
 	} else {
 		document.body.style.cursor = "wait";
-		self.ajaxRequest('POST', './getPoem.php', "poemUrl=" + poemUrl, function(data) {
+		self.ajaxRequest('POST', 'getPoem.php', "poemUrl=" + poemUrl, function(data) {
 			document.body.style.cursor = "default";
 			data = data.replace(/Warning([^;]*){/, '{');
 			if (data == "Erreur") {
@@ -258,9 +259,8 @@ self.getPoem = function (poemUrl) {
 				data.poeme = data.poeme.replace(/###/g, '\n');
 				data.poeme = data.poeme.replace(/\[[^;]*]/g, "");
 				data.titre = data.titre.replace(/\//g, " - ");
-				var poeme = data.poeme.replace(/\r\n|\r|\n/g, "<br>");
+				self.parsePoemToHTML(data.poeme, poemDIV);
 				document.getElementById("meta").innerHTML = '<h1><a href="' + data.url + '">' + data.titre + '</a></h1><br><em> de ' + data.auteur + '</em><br><br>';
-				poemDIV.innerHTML = poeme;
 			}
 		}, function () {
 			poemDIV.innerHTML = "<br>";
@@ -357,7 +357,7 @@ self.sansAccents = function (s) {
 
 self.ajaxRequest = function (method, file, sendContent, success, error){
 	var	request = new XMLHttpRequest();
-	request.open(method, file, true);
+	request.open(method, phpDirectory + file, true);
 	request.onreadystatechange = function() {
 		if (this.readyState === 4) {
 			if (this.status >= 200 && this.status < 400) {
@@ -386,6 +386,28 @@ self.ajaxRequest = function (method, file, sendContent, success, error){
 	request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
 	request.send(sendContent);
 	request = null;
+};
+
+self.parsePoemToHTML = function (poeme, poemDIV) {
+	var poem = '';
+	poeme.split(/\r\n|\r|\n/g).forEach(function(vers) {
+		vers = vers.charAt(0).toUpperCase() + vers.slice(1);
+		poem += vers + '\n';
+	});
+	poem = poem.slice(0, -1);
+	poem = poem.replace(/[^\S\n]/g, '</span> <span class="mot1">');
+	poem = poem.replace(/\r\n|\r|\n/g, '</span></span><br><span class="vers"><span class="mot1">');
+	poem = '<span class="vers"><span class="mot1">' + poem + '</span></span>';
+	poemDIV.innerHTML = poem;
+	poemDIV.innerHTML = poemDIV.innerHTML.replace(new RegExp(escapeRegExp('<span class="vers"><span class="mot1"></span></span>'), 'g'), "");
+};
+
+self.unparsePoemFromHTML = function(poeme) {
+	poeme = replaceAll('<span class="mot1">', '', poeme);
+	poeme = replaceAll('</span>', '', poeme);
+	poeme = replaceAll('<br>', '\n', poeme);
+	poeme = replaceAll('<span class="vers">', '', poeme);
+	return poeme;
 };
 
 return self;
