@@ -65,7 +65,7 @@ function rimifyBinder(e)
         traitementRimes(k, vers, mot, rimesObj.rimes, e.target, premot, rimesObj.isFem, true);
       }else{
         document.body.style.cursor = "default";
-        poet.motsArray = poet.motsArray.concat({rime: s, rimes: [s], index: 0, isFem: false});
+        poet.motsArray = poet.motsArray.concat({rime: mot, rimes: [mot], index: 0, isFem: false});
         return false;
       }
     });

@@ -179,7 +179,7 @@ self.rimify = function (s, gender, addWord, callback) {
 				}
 			}
 			if(addWord)
-			rimesArray.push(rhymes.rkeys.wordProp);
+				rimesArray.push(rhymes.rkeys.word);
 			this.callback = callback || function(rimesArray) {
 				console.log(rimesArray);
 				return rimesArray;
@@ -260,7 +260,7 @@ self.getPoem = function (poemUrl) {
 				data.poeme = data.poeme.replace(/\[[^;]*]/g, "");
 				data.titre = data.titre.replace(/\//g, " - ");
 				self.parsePoemToHTML(data.poeme, poemDIV);
-				document.getElementById("meta").innerHTML = '<h1><a href="' + data.url + '">' + data.titre + '</a></h1><br><em> de ' + data.auteur + '</em><br><br>';
+				document.getElementById("meta").innerHTML = '<h1><a href="' + data.url + '">' + data.titre + '</a></h1><em> de ' + data.auteur + '</em>';
 			}
 		}, function () {
 			poemDIV.innerHTML = "<br>";
