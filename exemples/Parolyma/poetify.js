@@ -271,6 +271,7 @@ self.getPoem = function (poemUrl) {
 				data = JSON.parse(data);
 				data.poeme = data.poeme.replace(/###/g, '\n');
 				data.poeme = data.poeme.replace(/\[[^;]*]/g, "");
+				data.poeme = data.poeme.replace("'", "’");
 				data.titre = data.titre.replace(/\//g, " - ");
 				self.parsePoemToHTML(data.poeme, poemDIV);
 				document.getElementById("meta").innerHTML = '<h1><a href="' + data.url + '">' + data.titre + '</a></h1><em> de ' + data.auteur + '</em>';

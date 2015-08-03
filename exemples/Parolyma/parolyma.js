@@ -12,19 +12,7 @@ poet.getSong = function (songUrl, songArtist) {
     } else {
       document.body.style.cursor = "wait";
       poet.ajaxRequest('POST', exampleDirectory + 'getSong.php', "songUrl=" + songUrl, function(data) {
-        document.body.style.cursor = "default";
-        data = data.replace(/Warning([^;]*){/, '{');
-        if (data == "Erreur") {
-          lyricsDIV.innerHTML = "<br>";
-          document.getElementById("meta").innerHTML = "Erreur lors de la récupération des paroles. Réessayer.<br>";
-        } else {
-          data = JSON.parse(data);
-          data.lyrics = data.lyrics.replace(/###/g, '\n');
-          data.lyrics = data.lyrics.replace(/\[[^;]*]/g, "");
-          data.titre = data.titre.replace(/\//g, " - ");
-          poet.parsePoemToHTML(data.lyrics, lyricsDIV);
-          document.getElementById("meta").innerHTML = '<h1><a href="' + data.url + '">' + data.titre + '</a></h1><em> de ' + data.auteur + '</em>';
-        }
+        getSongCallback(data);
       }, function () {
         lyricsDIV.innerHTML = "<br>";
         document.getElementById("meta").innerHTML = "Erreur lors de la récupération des paroles. Réessayer.<br>";
@@ -37,19 +25,7 @@ poet.getSong = function (songUrl, songArtist) {
     } else {
       document.body.style.cursor = "wait";
       poet.ajaxRequest('POST', exampleDirectory + 'getRandomSong.php', "songArtist=" + songArtist, function(data) {
-        document.body.style.cursor = "default";
-        data = data.replace(/Warning([^;]*){/, '{');
-        if (data == "Erreur") {
-          lyricsDIV.innerHTML = "<br>";
-          document.getElementById("meta").innerHTML = "Erreur lors de la récupération des paroles. Réessayer.<br>";
-        } else {
-          data = JSON.parse(data);
-          data.lyrics = data.lyrics.replace(/###/g, '\n');
-          data.lyrics = data.lyrics.replace(/\[[^;]*]/g, "");
-          data.titre = data.titre.replace(/\//g, " - ");
-          poet.parsePoemToHTML(data.lyrics, lyricsDIV);
-          document.getElementById("meta").innerHTML = '<h1><a href="' + data.url + '">' + data.titre + '</a></h1><em> de ' + data.auteur + '</em>';
-        }
+        getSongCallback(data);
       }, function () {
         lyricsDIV.innerHTML = "<br>";
         document.getElementById("meta").innerHTML = "Erreur lors de la récupération des paroles. Réessayer.<br>";
@@ -57,6 +33,23 @@ poet.getSong = function (songUrl, songArtist) {
     }
   }
 };
+
+function getSongCallback(data){
+  document.body.style.cursor = "default";
+  data = data.replace(/Warning([^;]*){/, '{');
+  if (data == "Erreur") {
+    lyricsDIV.innerHTML = "<br>";
+    document.getElementById("meta").innerHTML = "Erreur lors de la récupération des paroles. Réessayer.<br>";
+  } else {
+    data = JSON.parse(data);
+    data.lyrics = data.lyrics.replace(/###/g, '\n');
+    data.lyrics = data.lyrics.replace(/\[[^;]*]/g, "");
+    data.lyrics = data.lyrics.replace("'", "’");
+    data.titre = data.titre.replace(/\//g, " - ");
+    poet.parsePoemToHTML(data.lyrics, lyricsDIV);
+    document.getElementById("meta").innerHTML = '<h1><a href="' + data.url + '">' + data.titre + '</a></h1><em> de ' + data.auteur + '</em>';
+  }
+}
 
 window.onload = function() {
   var artist = artistsList[Math.floor(Math.random() * artistsList.length)];

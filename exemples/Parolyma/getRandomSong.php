@@ -35,6 +35,7 @@ if($songsNodes->length > 0){
   $creditsQuery = $lyricsXpath->query('//div[@class="song-credit-box"]/text()');
   $lyrics = $lyricsQuery->item($i)->nodeValue;
   $lyrics = delete_all_between("(", ")", $lyrics);
+  $lyrics = str_replace("'", "’", $lyrics);
 
   if (isset($lyricsLink) && isset($songName) && isset($artistName) && isset($lyrics)) {
       $arr = array('url' => $lyricsLink, 'titre' => $songName, 'auteur' => $artistName, 'lyrics' => $lyrics);

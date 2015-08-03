@@ -17,6 +17,7 @@ $artistName = substr($songAttrTitle, 0 , strrpos($songAttrTitle, ":"));
 $songName = substr($songAttrTitle, strrpos($songAttrTitle, ":") + 1);
 $lyrics = $lyricsQuery->item($i)->nodeValue;
 $lyrics = delete_all_between("(", ")", $lyrics);
+$lyrics = str_replace("'", "’", $lyrics);
 
 if (isset($lyricsLink) && isset($songName) && isset($artistName) && isset($lyrics)) {
     $arr = array('url' => $lyricsLink, 'titre' => $songName, 'auteur' => $artistName, 'lyrics' => $lyrics);
