@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title></title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <script type="text/javascript" src="./poetify.js"></script>
+        <script type="text/javascript" src="./parolyma.js"></script>
+    </head>
+    <body>
+      <input type="button" id="autoRandomizer" onclick="autoRandomizer(0);" value="Je suis paresseux, je préfère qu'un automate clique partout pour moi !">
+        <div id="meta"></div>
+        <div id="lyrics"></div>
+        <div style="text-align: center;">
+            <form>
+                <table>
+                    <tr>
+                      <td><input type="url" name="songUrl" placeholder="Lien Lyrics Wikia"></td>
+                      <td><label for="songArtist">Choisir un artiste </label><select name="songArtist">
+                        <option value="Booba">Booba</option>
+                        <option value="Claude_François">Claude François</option>
+                        <option value="La_Fouine">La Fouine</option>
+                        <option value="Lorie">Lorie</option>
+                        <option value="Noir_Désir">Noir Désir</option>
+                        <option value="Serge_Gainsbourg">Serge Gainsbourg</option>
+                    </select></td>
+                    </tr>
+                    <tr>
+                      <td><input type="button" onclick="getParolymaSong(this.form.songUrl.value);" value="Charger depuis Lyrics Wikia"></td>
+                      <td><input type="button" onclick="getRandomSong(this.form.songArtist.value);" value="Charger une chanson aléatoire"></td></tr>
+                </table>
+            </form>
+        </div>
+    </body>
+</html>
