@@ -6,6 +6,7 @@ $lyricsLink = $_POST["songUrl"];
 
 // Get the lyrics and credits
 $lyricsPage = getCURLOutput($lyricsLink);
+$lyricsPage = str_replace('<br />', '###', $lyricsPage);
 $lyricsXpath = getDOMXPath($lyricsPage);
 $lyricsQuery = $lyricsXpath->query('//div[@class="lyricbox"]/text()');
 $creditsQuery = $lyricsXpath->query('//div[@class="song-credit-box"]/text()');
@@ -14,10 +15,7 @@ $songAttrTitle = $metaQuery->item(0)->nodeValue;
 $songAttrTitle = str_replace(" Lyrics", "", $songAttrTitle);
 $artistName = substr($songAttrTitle, 0 , strrpos($songAttrTitle, ":"));
 $songName = substr($songAttrTitle, strrpos($songAttrTitle, ":") + 1);
-for($i = 0; $i < $lyricsQuery->length; $i++){
-  $lyrics .= $lyricsQuery->item($i)->nodeValue;
-  $lyrics .= "\n";
-}
+$lyrics = $lyricsQuery->item($i)->nodeValue;
 $lyrics = delete_all_between("(", ")", $lyrics);
 
 if (isset($lyricsLink) && isset($songName) && isset($artistName) && isset($lyrics)) {

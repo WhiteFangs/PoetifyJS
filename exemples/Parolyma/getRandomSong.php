@@ -33,10 +33,7 @@ if($songsNodes->length > 0){
   $lyricsXpath = getDOMXPath($lyricsPage);
   $lyricsQuery = $lyricsXpath->query('//div[@class="lyricbox"]');
   $creditsQuery = $lyricsXpath->query('//div[@class="song-credit-box"]/text()');
-  //for($i = 0; $i < $lyricsQuery->length; $i++){
-    $lyrics = $lyricsQuery->item($i)->nodeValue;
-  //  $lyrics .= "\n";
-  //}
+  $lyrics = $lyricsQuery->item($i)->nodeValue;
   $lyrics = delete_all_between("(", ")", $lyrics);
 
   if (isset($lyricsLink) && isset($songName) && isset($artistName) && isset($lyrics)) {
