@@ -35,6 +35,7 @@ poet.getSong = function (songUrl, songArtist) {
 };
 
 function getSongCallback(data){
+  var lyricsDIV = document.getElementById("lyrics");
   document.body.style.cursor = "default";
   data = data.replace(/Warning([^;]*){/, '{');
   if (data == "Erreur") {
