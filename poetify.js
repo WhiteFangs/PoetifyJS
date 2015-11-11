@@ -273,7 +273,7 @@ self.getPoem = function (poemUrl) {
 				data.poeme = data.poeme.replace(/\[[^;]*]/g, "");
 				data.titre = data.titre.replace(/\//g, " - ");
 				self.parsePoemToHTML(data.poeme, poemDIV);
-				document.getElementById("meta").innerHTML = '<h1><a href="' + data.url + '">' + data.titre + '</a></h1><em> de ' + data.auteur + '</em>';
+				document.getElementById("meta").innerHTML = '<h2><a href="' + data.url + '">' + data.titre + '</a></h2><em> de ' + data.auteur + '</em>';
 			}
 		}, function () {
 			poemDIV.innerHTML = "<br>";

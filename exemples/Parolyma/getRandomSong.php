@@ -3,12 +3,13 @@ include("helpers.php");
 header('Content-Type: text/html; charset=utf-8');
 
 $artistLink = urlencode($_POST["songArtist"]);
-$artistWikiaLink = "http://lyrics.wikia.com/" . $artistLink;
+$artistLink = "Lorie";
+$artistWikiaLink = "http://lyrics.wikia.com/wiki/" . $artistLink;
 
 // Get list of songs with lyrics from artist page
 $artistPage = getCURLOutput($artistWikiaLink);
 $artistXpath = getDOMXPath($artistPage);
-$songsNodes = $artistXpath->query('//b/a[starts-with(@href, "/'.$artistLink.':") and not(contains(@href, "?action=edit"))]');
+$songsNodes = $artistXpath->query('//b/a[starts-with(@href, "/wiki/'.$artistLink.':") and not(contains(@href, "?action=edit"))]');
 
 if($songsNodes->length > 0){
   // Create songs array to filter duplicate songs

@@ -48,7 +48,7 @@ function getSongCallback(data){
     data.lyrics = data.lyrics.replace("'", "’");
     data.titre = data.titre.replace(/\//g, " - ");
     poet.parsePoemToHTML(data.lyrics, lyricsDIV);
-    document.getElementById("meta").innerHTML = '<h1><a href="' + data.url + '">' + data.titre + '</a></h1><em> de ' + data.auteur + '</em>';
+    document.getElementById("meta").innerHTML = '<h2><a href="' + data.url + '">' + data.titre + '</a></h2><em> de ' + data.auteur + '</em>';
   }
 }
 
