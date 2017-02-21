@@ -1,6 +1,6 @@
 var poet = new poetify("../../");
 var artistsList = ["Booba", "Claude_François", "La_Fouine", "Lorie", "Noir_Désir", "Serge_Gainsbourg"];
-var exampleDirectory = "./exemples/Parolyma/";
+var exampleDirectory = "./";
 
 // Get Song from Lyrics Wikia
 poet.getSong = function (songUrl, songArtist) {
@@ -162,7 +162,7 @@ function rimifyBinder(e)
       }
     }
     if (rimes === undefined) { // Si les rimes n'ont pas été chargées, on les charge et on les traite
-    poet.rimify(mot, true, true, function(rimesObj) {
+    poet.rimify(mot, true, function(rimesObj) {
       if (rimesObj.rimes.length !== 0) {
         traitementRimes(k, vers, mot, rimesObj.rimes, e.target, premot, rimesObj.isFem, true, capitalize);
       }else{

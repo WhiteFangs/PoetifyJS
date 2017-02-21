@@ -163,87 +163,28 @@ self.metrify = function (s) {
 };
 
 // Récupère les rimes d'un mot ayant le même nombre de syllabes et la même nature (Verbe, nom, adjectif...)
-self.rimify = function (s, gender, addWord, success, error) {
+self.rimify = function (s, addWord, success, error) {
 	var syllabes = self.syllabify(s);
-	self.getWordQuery(s, function(wordProp) {
-		self.getRimesQuery(wordProp, gender, function(rhymes) {
-			var rimesArray = [];
-			var rime, syllabesRime;
-			if (rhymes !== null) {
-				for (var k = 0; k < rhymes.length; k++) {
-					rime = rhymes[k].word;
-					syllabesRime = self.syllabify(rime);
-					if (syllabesRime.nb == syllabes.nb && syllabesRime.max == syllabes.max && self.natureEquals(rhymes[k].nature, rhymes.rkeys.nature)) {
-						rimesArray.push(rime);
-					}
-				}
-			}
-			if(addWord)
-				rimesArray.push(rhymes.rkeys.word);
-			this.success = success || function(rimesArray) {
-				console.log(rimesArray);
-				return rimesArray;
-			};
-			this.success({rimes: rimesArray, isFem: (rhymes[0].feminine == 1) ? true : false});
-		}, error);
+	self.getRimesQuery(s, function(data) {
+		if(addWord)
+			data.rimes.push(s);
+		this.success = success || function(data) {
+			console.log(data);
+			return data;
+		};
+		this.success(data);
 	}, error);
 };
 
-// Récupère les données d'un mot dans la base de données et exécute le callback avec les propriétés du mot si besoin
-self.getWordQuery = function (word, success, error) {
-	word = word.replace(/[\.,…\/#!$%\^&\*;\?:{}=\_`~()]/g, "").replace(/[0-9]/g, '').replace(/\s{1,}/g, "").replace(/œ/g, "oe").replace(/æ/g, "ae");
-	word = word.toLowerCase();
-	self.ajaxRequest('POST', 'getWord.php', "word=" + word, function(data) {
-		data = JSON.parse(data);
-		if(data.properties.length !== 0){
-			this.success = success || function(wordprop) {
-				console.log(wordprop);
-			};
-			this.success(data.properties[0]);
-		}else{
-			this.error = error || function() {
-				console.log("Word not found in the database");
-			};
-			this.error();
-		}
-	}, function () {
-		this.error = error || function() {
-			console.log("An error happened in getWordQuery");
-		};
-		this.error();
-	});
-};
-
 // Récupère les rimes d'un mot à l'aide de ses propriétés et exécute le callback avec le tableau de rimes obtenu si besoin
-self.getRimesQuery = function (wordProp, gender, success, error) {
-	var word = wordProp.word, phon = wordProp.phon, feminine = wordProp.feminine,
-	json = {phon_end: wordProp.phon_end, word_end: wordProp.word_end, min_nsyl: wordProp.min_nsyl, max_nsyl: wordProp.max_nsyl, elidable: wordProp.elidable},
-	sendContent = 'phon_end=' + wordProp.phon_end + '&word_end=' + wordProp.word_end + '&min_nsyl=' + wordProp.min_nsyl + '&max_nsyl=' + wordProp.max_nsyl + '&elidable=' + wordProp.elidable;
-	self.ajaxRequest('POST', 'getRimes.php', sendContent, function(data) {
+self.getRimesQuery = function (word, success, error) {
+	self.ajaxRequest('POST', 'getRimes.php', 'word=' + word, function(data) {
 		data = JSON.parse(data);
-		var rhymes = data.rimes, k;
-		for (k = 0; k < rhymes.length; k++) {
-			if((!gender || feminine == rhymes[k].feminine) && (word != rhymes[k].word)){
-				var word_rhyme = self.lcs(word, rhymes[k].word),
-				phon_rhyme = self.lcs(phon, rhymes[k].phon);
-				rhymes[k].key = {phon_rhyme: -phon_rhyme, word_rhyme: -word_rhyme, freq: -rhymes[k].freq, word: rhymes[k].word};
-				rhymes[k].nature = self.parseOrigine(rhymes[k], true);
-				rhymes[k].origine = self.parseOrigine(rhymes[k], false);
-			}else{
-				rhymes.splice(k,1);
-				k--;
-			}
-		}
-		var nature = self.parseOrigine(wordProp, true);
-		var origine = self.parseOrigine(wordProp, false);
-		rhymes = self.sortRhymes(rhymes, phon.length, word.length);
-		wordProp.nature = nature;
-		wordProp.origine = origine;
-		rhymes.rkeys = {word: word, phon: phon, nature: nature, origine: origine, wordObject : wordProp};
-		this.success = success || function(rhymes) {
-			console.log(rhymes);
+		data.isFem = data.isFem == "1";
+		this.success = success || function(data) {
+			console.log(data);
 		};
-		this.success(rhymes);
+		this.success(data);
 	}, function () {
 		this.error = error || function() {
 			console.log("An error happened in getRimesQuery");
@@ -291,71 +232,6 @@ self.natureEquals = function (natureRime, nature) {
 		}
 	}
 	return false;
-};
-
-//Longest common suffix (phonetic and word)
-self.lcs = function (word, rhyme) {
-	var i = 0;
-	while (word.substring(word.length, word.length - i) == rhyme.substring(rhyme.length, rhyme.length - i)) {
-		i++;
-		if (i > word.length || i > rhyme.length) {
-			break;
-		}
-	}
-	return (i - 1);
-};
-
-// Fonction pour parser la nature et l'origine des mots
-self.parseOrigine = function (wordProp, isNature) {
-	var idx = (isNature) ? 0 : 1;
-	var prop = wordProp.orig.split(","), result = [];
-	for (var i = 0; i < prop.length; i++) {
-		result[i] = prop[i].split("|")[idx];
-	}
-	return result;
-};
-
-// Fonction pour classer les rimes en fonction de leur propriétés phon_rhyme, puis word_rhyme, puis freq
-self.sortRhymes = function (rhymes, phl, wdl) {
-	var filterPhon = function(e){return e.key.phon_rhyme == -i;},
-	sortWordRhyme = function(a,b){return a.key.word_rhyme - b.key.word_rhyme;},
-	filterWord = function(e){return e.key.word_rhyme == -j;},
-	sortKeyFreq = function(a,b){return a.key.freq - b.key.freq;};
-	rhymes.sort(function(a,b){return a.key.phon_rhyme - b.key.phon_rhyme;});
-	var rhymesArr = [];
-	for(var i = phl; i > -1; i--){
-		var tempArr = rhymes.filter(filterPhon);
-		tempArr.sort(sortWordRhyme);
-		var sort2 = [];
-		for(var j = wdl; j > -1; j--){
-			var tempArr2 = tempArr.filter(filterWord);
-			tempArr2.sort(sortKeyFreq);
-			sort2 = sort2.concat(tempArr2);
-		}
-		rhymesArr = rhymesArr.concat(sort2);
-	}
-	return rhymesArr;
-};
-
-self.uniqueOrigine = function (rhymes, origine){
-	var u = {}, uniqueRhymes = [], addRhyme = false;
-	for(var j = 0; j < origine.length; j++){
-		u[origine[j]] = 1;
-	}
-	for(var i = 0, l = rhymes.length; i < l; ++i){
-		for(var k = 0; k < rhymes[i].origine.length; k++){
-			if(u.hasOwnProperty(rhymes[i].origine[k])) {
-				continue;
-			}else{
-				u[rhymes[i].origine[k]] = 1;
-				addRhyme = true;
-			}
-		}
-		if(addRhyme)
-		uniqueRhymes.push(rhymes[i]);
-		addRhyme = false;
-	}
-	return uniqueRhymes;
 };
 
 self.sansAccents = function (s) {

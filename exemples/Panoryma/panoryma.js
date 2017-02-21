@@ -5,7 +5,7 @@ window.onload = function() {
   'http://fr.wikisource.org/wiki/El_Desdichado',
   'http://fr.wikisource.org/wiki/Po%C3%A8mes_saturniens/Mon_r%C3%AAve_familier',
   'http://fr.wikisource.org/wiki/Le_Pont_Mirabeau',
-  'http://fr.wikisource.org/wiki/Le_Dormeur_du_val',
+  'https://fr.wikisource.org/wiki/Po%C3%A9sies_(Rimbaud)/%C3%A9d._Vanier,_1895/Le_Dormeur_du_val',
   'http://fr.wikisource.org/wiki/%C2%AB_Demain,_d%C3%A8s_l%E2%80%99aube,_%C3%A0_l%E2%80%99heure_o%C3%B9_blanchit_la_campagne_%C2%BB',
   'http://fr.wikisource.org/wiki/%C2%AB_Mignonne,_allons_voir_si_la_rose_%C2%BB',
   'http://fr.wikisource.org/wiki/Nuit_rh%C3%A9nane',
@@ -110,7 +110,7 @@ function rimifyBinder(e)
       }
     }
     if (rimes === undefined) { // Si les rimes n'ont pas été chargées, on les charge et on les traite
-    poet.rimify(mot, true, true, function(rimesObj) {
+    poet.rimify(mot, true, function(rimesObj) {
       if (rimesObj.rimes.length !== 0) {
         traitementRimes(k, vers, mot, rimesObj.rimes, e.target, premot, rimesObj.isFem, true, capitalize);
       }else{

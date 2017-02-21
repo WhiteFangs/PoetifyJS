@@ -38,20 +38,12 @@ Fonctions
 
   - Les rimes ont le même nombre de syllabes que le mot donné
   - Les rimes ont la même nature que le mot donné
-  - Peut filtrer les rimes selon le genre du mot donné
-
-### GetWordQuery (PHP)
-
-**Fonction exécutant une requête vers la base de données pour un mot**
-
-  - Peut exécuter un callback avec les propriétés du mot récupérées
 
 ### GetRimesQuery (PHP)
 
 **Fonction exécutant une requête vers la base de données pour les rimes d'un mot donné**
 
   - Peut exécuter un callback avec le tableau de rimes obtenu
-  - Peut filtrer les rimes selon le genre du mot donné
   - Classe les rimes selon l'ordre suivant: similarité phonétique, similarité graphique, fréquence
 
 ### GetPoem (PHP)
